@@ -5,7 +5,8 @@ import Navbar from "./components/Navbar";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
-import Login from "./pages/login";
+import Login from "./pages/Login";
+
 import Register from "./pages/Register";
 
 import PatientDashboard from "./pages/patient/PatientDashboard";
