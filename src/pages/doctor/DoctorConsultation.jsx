@@ -19,10 +19,6 @@ const DoctorConsultation = () => {
   }, []);
 
   const loadBookings = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     const { data, error } = await supabase
       .from("appointment_bookings")
       .select(`
@@ -31,18 +27,15 @@ const DoctorConsultation = () => {
         booked_at,
         profiles:patient_id(full_name, age, gender, phone, medical_history)
       `)
-      .order("booked_at", { ascending: false });
+      .order("booked_at", { ascending: true }); // FIFO preserved
 
-    if (!error) setBookings(data);
+    if (!error) setBookings(data || []);
   };
 
   const loadHistory = async (patientId) => {
     const { data } = await supabase
       .from("medical_records")
-      .select(`
-        *,
-        prescriptions (*)
-      `)
+      .select(`*, prescriptions(*)`)
       .eq("patient_id", patientId)
       .order("created_at", { ascending: false });
 
@@ -55,7 +48,10 @@ const DoctorConsultation = () => {
   };
 
   const addRow = () => {
-    setMeds([...meds, { medicine_name: "", dosage: "", frequency: "", duration: "" }]);
+    setMeds([
+      ...meds,
+      { medicine_name: "", dosage: "", frequency: "", duration: "" },
+    ]);
   };
 
   const updateMed = (i, field, value) => {
@@ -85,11 +81,11 @@ const DoctorConsultation = () => {
 
     if (error) return toast.error(error.message);
 
-    const medsPayload = meds.filter(m => m.medicine_name.trim() !== "");
+    const medsPayload = meds.filter((m) => m.medicine_name.trim() !== "");
 
     if (medsPayload.length > 0) {
       await supabase.from("prescriptions").insert(
-        medsPayload.map(m => ({
+        medsPayload.map((m) => ({
           ...m,
           record_id: record.id,
         }))
@@ -97,98 +93,128 @@ const DoctorConsultation = () => {
     }
 
     toast.success("Record saved");
-
     setTitle("");
     setDescription("");
     setMeds([{ medicine_name: "", dosage: "", frequency: "", duration: "" }]);
-
     loadHistory(selected.patient_id);
   };
 
   return (
-    <div className="grid grid-cols-3 gap-6">
-      {/* LEFT: BOOKINGS */}
-      <div className="space-y-4">
-        <h2 className="font-bold">Appointments</h2>
-        {bookings.map((b) => (
-          <div
-            key={b.id}
-            onClick={() => handleSelect(b)}
-            className={`p-3 rounded cursor-pointer ${
-              selected?.id === b.id ? "bg-blue-100" : "bg-white"
-            }`}
-          >
-            <p>{b.profiles?.full_name || "Unnamed"}</p>
-          </div>
-        ))}
+    <div className="max-w-6xl mx-auto px-6 space-y-6">
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold">Doctor Dashboard</h1>
+        <p className="text-gray-500">Manage consultations and patient records</p>
       </div>
 
-      {/* CENTER: PATIENT INFO */}
-      <div className="space-y-4">
-        {selected ? (
-          <>
-            <h2 className="font-bold">Patient Info</h2>
-            <p>Name: {selected.profiles?.full_name}</p>
-            <p>Age: {selected.profiles?.age}</p>
-            <p>Gender: {selected.profiles?.gender}</p>
-            <p>Phone: {selected.profiles?.phone}</p>
-            <p>Patient Notes: {selected.profiles?.medical_history}</p>
+      {/* GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            <h3 className="font-semibold mt-4">History</h3>
+        {/* LEFT */}
+        <div className="bg-white p-6 rounded-2xl shadow space-y-4">
+          <h2 className="font-semibold text-lg">Patient Queue</h2>
+
+          {bookings.map((b, i) => (
+            <div
+              key={b.id}
+              onClick={() => handleSelect(b)}
+              className={`p-4 rounded-xl border cursor-pointer transition ${
+                selected?.id === b.id
+                  ? "border-orange-500 bg-orange-50"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              <p className="font-medium">{i + 1}. {b.profiles?.full_name}</p>
+              <p className="text-sm text-gray-500">
+                {b.profiles?.gender}, {b.profiles?.age}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* CENTER */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow">
+            <h2 className="font-semibold text-lg mb-3">Patient Overview</h2>
+
+            {selected ? (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <p><b>Name:</b> {selected.profiles?.full_name}</p>
+                <p><b>Age:</b> {selected.profiles?.age}</p>
+                <p><b>Gender:</b> {selected.profiles?.gender}</p>
+                <p><b>Phone:</b> {selected.profiles?.phone}</p>
+                <p className="col-span-2"><b>History:</b> {selected.profiles?.medical_history}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500">Select a patient to view details</p>
+            )}
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow space-y-4">
+            <h2 className="font-semibold text-lg">Consultation History</h2>
+
+            {history.length === 0 && (
+              <p className="text-sm text-gray-500">No previous records</p>
+            )}
+
             {history.map((r) => (
-              <div key={r.id} className="bg-white p-3 rounded shadow text-sm">
+              <div key={r.id} className="border rounded-xl p-4 space-y-2">
                 <p className="font-medium">{r.title}</p>
-                <p>{r.description}</p>
+                <p className="text-sm text-gray-600">{r.description}</p>
 
-                {r.prescriptions?.map((p) => (
-                  <p key={p.id}>
-                    • {p.medicine_name} – {p.dosage}
-                  </p>
-                ))}
+                {r.prescriptions?.length > 0 && (
+                  <div className="text-xs text-gray-500 space-y-1">
+                    {r.prescriptions.map((p) => (
+                      <p key={p.id}>• {p.medicine_name} – {p.dosage}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
-          </>
-        ) : (
-          <p>Select appointment</p>
-        )}
-      </div>
-
-      {/* RIGHT: NEW RECORD */}
-      <div className="space-y-4">
-        <h2 className="font-bold">Add Record</h2>
-
-        <input
-          className="border p-2 w-full"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <textarea
-          className="border p-2 w-full"
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-
-        <h3 className="font-semibold">Medicines</h3>
-
-        {meds.map((m, i) => (
-          <div key={i} className="space-y-1">
-            <input placeholder="Medicine" className="border p-1 w-full" onChange={(e)=>updateMed(i,"medicine_name",e.target.value)} />
-            <input placeholder="Dosage" className="border p-1 w-full" onChange={(e)=>updateMed(i,"dosage",e.target.value)} />
-            <input placeholder="Frequency" className="border p-1 w-full" onChange={(e)=>updateMed(i,"frequency",e.target.value)} />
-            <input placeholder="Duration" className="border p-1 w-full" onChange={(e)=>updateMed(i,"duration",e.target.value)} />
           </div>
-        ))}
+        </div>
 
-        <button onClick={addRow} className="bg-gray-200 px-3 py-1 rounded">
-          + Add Medicine
-        </button>
+        {/* RIGHT */}
+        <div className="bg-white p-6 rounded-2xl shadow space-y-4">
+          <h2 className="font-semibold text-lg">New Consultation</h2>
 
-        <button onClick={saveRecord} className="bg-blue-600 text-white px-4 py-2 rounded w-full">
-          Save Record
-        </button>
+          <input
+            placeholder="Consultation title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="border p-3 rounded-lg w-full"
+          />
+
+          <textarea
+            placeholder="Clinical notes / diagnosis"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="border p-3 rounded-lg w-full min-h-[100px]"
+          />
+
+          <h3 className="font-medium text-sm">Prescriptions</h3>
+
+          {meds.map((m, i) => (
+            <div key={i} className="grid grid-cols-2 gap-2">
+              <input placeholder="Medicine" className="border p-2 rounded" onChange={(e)=>updateMed(i,"medicine_name",e.target.value)} />
+              <input placeholder="Dosage" className="border p-2 rounded" onChange={(e)=>updateMed(i,"dosage",e.target.value)} />
+              <input placeholder="Frequency" className="border p-2 rounded" onChange={(e)=>updateMed(i,"frequency",e.target.value)} />
+              <input placeholder="Duration" className="border p-2 rounded" onChange={(e)=>updateMed(i,"duration",e.target.value)} />
+            </div>
+          ))}
+         
+          {/* BUTTONS NOW ON SEPARATE LINES */}
+          <button onClick={addRow} className="text-orange-600 text-sm text-left">
+            + Add another medicine
+          </button>
+          <br />
+          <button
+            onClick={saveRecord}
+            className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-2 rounded-xl font-medium mx-auto"
+          >
+            Save Consultation
+          </button>
+        </div>
       </div>
     </div>
   );

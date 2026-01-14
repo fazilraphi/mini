@@ -1,104 +1,65 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const navLinkClass = ({ isActive }) =>
+    isActive
+      ? "px-4 py-2 rounded-lg bg-orange-100 text-orange-600 font-medium"
+      : "px-4 py-2 text-gray-700 hover:text-orange-600";
 
   return (
-    <nav className="bg-yellow-200 h-14 fixed top-0 left-0 w-full z-50 flex items-center px-6">
-      {/* Logo */}
-      <div className="font-semibold">LogoHere</div>
+    <nav className="bg-white border-b sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
 
-      {/* Desktop Menu */}
-      <div className="hidden md:flex items-center w-full">
-        {/* Left spacer pushes menu right */}
-        <div className="flex-1"></div>
+          {/* Logo */}
+          <div className="text-xl font-bold">
+            Health<span className="text-orange-500">Sync</span>
+          </div>
 
-        {/* Nav Links */}
-        <ul className="flex gap-6">
-          <li>
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-2">
+            <NavLink to="/" className={navLinkClass}>Home</NavLink>
+            <NavLink to="/about" className={navLinkClass}>About</NavLink>
+            <NavLink to="/login" className={navLinkClass}>Login</NavLink>
+
             <NavLink
-              to="/"
-              className={({ isActive }) =>
-                isActive ? "font-semibold text-blue-600" : "text-gray-800"
-              }
+              to="/register"
+              className="ml-2 bg-orange-500 text-white px-5 py-2 rounded-xl hover:bg-orange-600 transition"
             >
-              Home
+              Sign Up
             </NavLink>
-          </li>
+          </div>
 
-          <li>
-            <NavLink
-              to="/about"
-              className={({ isActive }) =>
-                isActive ? "font-semibold text-blue-600" : "text-gray-800"
-              }
-            >
-              About
-            </NavLink>
-          </li>
-
-          <li>
-            <NavLink
-              to="/login"
-              className={({ isActive }) =>
-                isActive ? "font-semibold text-blue-600" : "text-gray-800"
-              }
-            >
-              Login
-            </NavLink>
-          </li>
-        </ul>
-
-        {/* Right spacer */}
-        <div className="flex-1"></div>
-
-        {/* GitHub Button */}
-        <button
-          className="border-2 rounded-xl px-3 py-1 bg-orange-300 border-orange-100"
-          onClick={() => window.open("https://github.com/fazilraphi", "_blank")}
-        >
-          GitHub
-        </button>
+          {/* Mobile Button */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+          >
+            {open ? <X size={26} /> : <Menu size={26} />}
+          </button>
+        </div>
       </div>
 
-      {/* Hamburger (Mobile) */}
-      <button
-        className="ml-auto md:hidden"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        ☰
-      </button>
-
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="absolute top-14 left-0 w-full bg-yellow-200 md:hidden">
-          <ul className="flex flex-col gap-4 p-6">
-            <li>
-              <NavLink to="/" onClick={() => setIsOpen(false)}>
-                Home
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/about" onClick={() => setIsOpen(false)}>
-                About
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/login" onClick={() => setIsOpen(false)}>
-                Login
-              </NavLink>
-            </li>
+      {open && (
+        <div className="md:hidden bg-white border-t">
+          <div className="flex flex-col p-4 space-y-2">
+            <NavLink onClick={() => setOpen(false)} to="/" className={navLinkClass}>Home</NavLink>
+            <NavLink onClick={() => setOpen(false)} to="/about" className={navLinkClass}>About</NavLink>
+            <NavLink onClick={() => setOpen(false)} to="/login" className={navLinkClass}>Login</NavLink>
 
-            <button
-              className="mt-4 border-2 rounded-xl px-3 py-2 bg-orange-300 border-orange-100"
-              onClick={() =>
-                window.open("https://github.com/fazilraphi", "_blank")
-              }
+            <NavLink
+              onClick={() => setOpen(false)}
+              to="/register"
+              className="bg-orange-500 text-white text-center py-2 rounded-xl"
             >
-              GitHub
-            </button>
-          </ul>
+              Sign Up
+            </NavLink>
+          </div>
         </div>
       )}
     </nav>

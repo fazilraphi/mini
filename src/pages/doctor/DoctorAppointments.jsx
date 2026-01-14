@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 
+const MAX_PATIENTS = 10; // adjust if dynamic later
+
 const DoctorAppointments = () => {
   const [bookings, setBookings] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [selected, setSelected] = useState(null);
 
   const [patient, setPatient] = useState(null);
@@ -13,6 +16,8 @@ const DoctorAppointments = () => {
   const [description, setDescription] = useState("");
   const [medicines, setMedicines] = useState([]);
 
+  const [selectedDate, setSelectedDate] = useState("");
+
   useEffect(() => {
     loadBookings();
   }, []);
@@ -20,30 +25,37 @@ const DoctorAppointments = () => {
   const loadBookings = async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("appointment_bookings")
       .select(`
         id,
         booked_at,
         patient_id,
+        appointments (
+          date,
+          time,
+          max_patients
+        ),
         profiles (
-          id,
           full_name,
           age,
-          gender,
-          phone,
-          blood_group,
-          address,
-          medical_history
+          gender
         )
       `)
       .eq("doctor_id", user.id)
-      .order("booked_at", { ascending: false });
+      .order("booked_at", { ascending: true }); // FIFO
 
-    console.log("BOOKINGS:", data);
-    console.log("ERROR:", error);
+    setBookings(data || []);
+  };
 
-    if (!error) setBookings(data || []);
+  const applyFilter = () => {
+    if (!selectedDate) return toast.error("Select a date");
+
+    const result = bookings.filter(
+      b => b.appointments?.date === selectedDate
+    );
+
+    setFiltered(result);
   };
 
   const openPatient = async (booking) => {
@@ -58,7 +70,6 @@ const DoctorAppointments = () => {
         description,
         created_at,
         prescriptions (
-          id,
           medicine_name,
           dosage,
           frequency,
@@ -72,24 +83,20 @@ const DoctorAppointments = () => {
   };
 
   const addMedicine = () => {
-    setMedicines([
-      ...medicines,
-      { medicine_name: "", dosage: "", frequency: "", duration: "" },
-    ]);
+    setMedicines([...medicines, { medicine_name: "", dosage: "", frequency: "", duration: "" }]);
   };
 
-  const updateMedicine = (index, field, value) => {
-    const updated = [...medicines];
-    updated[index][field] = value;
-    setMedicines(updated);
+  const updateMedicine = (i, f, v) => {
+    const copy = [...medicines];
+    copy[i][f] = v;
+    setMedicines(copy);
   };
 
   const saveConsultation = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-
     if (!title) return toast.error("Title required");
 
-    const { data: record, error } = await supabase
+    const { data: record } = await supabase
       .from("medical_records")
       .insert({
         patient_id: selected.patient_id,
@@ -101,150 +108,161 @@ const DoctorAppointments = () => {
       .select()
       .single();
 
-    if (error) return toast.error(error.message);
-
     if (medicines.length > 0) {
-      const payload = medicines.map((m) => ({
-        ...m,
-        record_id: record.id,
-      }));
-
-      const { error: medError } = await supabase
-        .from("prescriptions")
-        .insert(payload);
-
-      if (medError) return toast.error(medError.message);
+      await supabase.from("prescriptions").insert(
+        medicines.map(m => ({ ...m, record_id: record.id }))
+      );
     }
 
-    toast.success("Consultation saved");
-
-    setTitle("");
-    setDescription("");
-    setMedicines([]);
-
-    openPatient(selected); // refresh history
+    toast.success("Saved");
+    setTitle(""); setDescription(""); setMedicines([]);
+    openPatient(selected);
   };
 
+  const bookedCount = filtered.length;
+  const capacity = filtered[0]?.appointments?.max_patients || MAX_PATIENTS;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Appointments</h1>
+    <div className="space-y-8 max-w-6xl">
+
+      <h1 className="text-3xl font-bold font-exo2">Booked Patients</h1>
 
       {!selected ? (
-        <div className="space-y-4">
-          {bookings.map((b) => (
-            <div
-              key={b.id}
-              className="bg-white p-4 rounded-xl shadow flex justify-between"
+        <>
+          {/* FILTER */}
+          <div className="bg-white p-5 rounded-xl shadow flex items-center gap-4">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={e => setSelectedDate(e.target.value)}
+              className="border px-4 py-2 rounded"
+            />
+            <button
+              onClick={applyFilter}
+              className="bg-orange-500 text-white px-6 py-2 rounded-lg"
             >
-              <div>
-                <p className="font-medium">
-                  {b.profiles?.full_name || "Unknown"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {b.profiles?.gender || "-"}, {b.profiles?.age || "-"}
-                </p>
-              </div>
+              View Slot
+            </button>
+          </div>
 
-              <button
-                onClick={() => openPatient(b)}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                Open
-              </button>
-            </div>
-          ))}
-
-          {bookings.length === 0 && (
-            <p className="text-gray-500">No appointments yet.</p>
+          {/* DONUT GRAPH */}
+          {filtered.length > 0 && (
+            <SlotChart booked={bookedCount} capacity={capacity} />
           )}
-        </div>
-      ) : (
-        <div className="space-y-6 bg-white p-6 rounded-xl shadow">
-          <button
-            onClick={() => {
-              setSelected(null);
-              setPatient(null);
-              setHistory([]);
-            }}
-            className="text-sm text-gray-500"
-          >
-            ← Back
-          </button>
 
-          {/* PATIENT BIODATA */}
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold">Patient Details</h2>
+          {/* FIFO LIST */}
+          <div className="space-y-4">
+            {filtered.map((b, i) => (
+              <div
+                key={b.id}
+                className="bg-white p-5 rounded-xl shadow flex justify-between"
+              >
+                <div>
+                  <p className="font-semibold">
+                    {i + 1}. {b.profiles?.full_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {b.profiles?.gender}, {b.profiles?.age} yrs
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => openPatient(b)}
+                  className="bg-orange-500 text-white px-4 py-2 rounded"
+                >
+                  Open
+                </button>
+              </div>
+            ))}
+
+            {filtered.length === 0 && (
+              <p className="text-gray-500">No patients for this slot.</p>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="space-y-6">
+          <button onClick={() => setSelected(null)} className="text-sm text-gray-500">← Back</button>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <h2 className="font-semibold text-lg">Patient Overview</h2>
             <p><b>Name:</b> {patient?.full_name}</p>
             <p><b>Age:</b> {patient?.age}</p>
             <p><b>Gender:</b> {patient?.gender}</p>
-            <p><b>Phone:</b> {patient?.phone}</p>
-            <p><b>Blood Group:</b> {patient?.blood_group}</p>
-            <p><b>Address:</b> {patient?.address}</p>
-            <p><b>Medical History:</b> {patient?.medical_history}</p>
           </div>
 
-          {/* HISTORY */}
-          <div className="space-y-3">
-            <h3 className="font-semibold">Past Consultations</h3>
-
-            {history.length === 0 && (
-              <p className="text-sm text-gray-500">No history yet.</p>
-            )}
-
-            {history.map((r) => (
-              <div key={r.id} className="border p-3 rounded">
-                <p className="font-medium">{r.title}</p>
-                <p className="text-sm text-gray-600">{r.description}</p>
-
-                {r.prescriptions?.map((p) => (
-                  <p key={p.id} className="text-xs text-gray-500">
-                    • {p.medicine_name} ({p.dosage})
-                  </p>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* NEW CONSULTATION */}
-          <div className="space-y-3">
+          <div className="bg-white p-6 rounded-xl shadow space-y-4">
             <h3 className="font-semibold">New Consultation</h3>
 
             <input
               placeholder="Title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               className="border p-2 w-full rounded"
             />
 
             <textarea
-              placeholder="Description"
+              placeholder="Diagnosis"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
               className="border p-2 w-full rounded"
             />
 
             {medicines.map((m, i) => (
-              <div key={i} className="grid grid-cols-2 gap-2 border p-3 rounded">
-                <input placeholder="Medicine" onChange={(e) => updateMedicine(i, "medicine_name", e.target.value)} className="border p-2 rounded" />
-                <input placeholder="Dosage" onChange={(e) => updateMedicine(i, "dosage", e.target.value)} className="border p-2 rounded" />
-                <input placeholder="Frequency" onChange={(e) => updateMedicine(i, "frequency", e.target.value)} className="border p-2 rounded" />
-                <input placeholder="Duration" onChange={(e) => updateMedicine(i, "duration", e.target.value)} className="border p-2 rounded" />
+              <div key={i} className="grid grid-cols-2 gap-2">
+                <input placeholder="Medicine" onChange={e => updateMedicine(i, "medicine_name", e.target.value)} className="border p-2 rounded"/>
+                <input placeholder="Dosage" onChange={e => updateMedicine(i, "dosage", e.target.value)} className="border p-2 rounded"/>
               </div>
             ))}
 
-            <button onClick={addMedicine} className="text-blue-600 text-sm">
-              + Add medicine
-            </button>
-
-            <button
-              onClick={saveConsultation}
-              className="bg-green-600 text-white px-5 py-2 rounded"
-            >
-              Save Consultation
-            </button>
+            <div className="flex gap-6">
+              <button onClick={addMedicine} className="text-blue-600">+ Add medicine</button>
+              <button onClick={saveConsultation} className="bg-green-600 text-white px-6 py-2 rounded">
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+/* ------------------ Donut Chart ------------------ */
+
+const SlotChart = ({ booked, capacity }) => {
+  const percent = Math.min(100, (booked / capacity) * 100);
+  const strokeDash = `${percent} ${100 - percent}`;
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow w-fit">
+      <h3 className="font-semibold mb-2">Slot Occupancy</h3>
+
+      <div className="relative w-40 h-40">
+        <svg viewBox="0 0 36 36" className="w-full h-full">
+          <path
+            d="M18 2.0845
+              a 15.9155 15.9155 0 0 1 0 31.831
+              a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none"
+            stroke="#eee"
+            strokeWidth="3"
+          />
+          <path
+            d="M18 2.0845
+              a 15.9155 15.9155 0 0 1 0 31.831
+              a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none"
+            stroke="#f97316"
+            strokeWidth="3"
+            strokeDasharray={strokeDash}
+          />
+        </svg>
+
+        <div className="absolute inset-0 flex items-center justify-center font-semibold">
+          {booked}/{capacity}
+        </div>
+      </div>
     </div>
   );
 };

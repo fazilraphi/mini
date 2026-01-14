@@ -2,53 +2,85 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 
+const DEFAULT_CAPACITY = 10;
+
 const Appointments = () => {
   const [slots, setSlots] = useState([]);
+  const [filteredSlots, setFilteredSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [bookingId, setBookingId] = useState(null);
+
+  const [selectedDate, setSelectedDate] = useState("");
+  const [appliedDate, setAppliedDate] = useState("");
 
   useEffect(() => {
     fetchSlots();
   }, []);
 
-const fetchSlots = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const fetchSlots = async () => {
+    setLoading(true);
 
-  const { data, error } = await supabase
-    .from("appointments")
-    .select(`
-      id,
-      date,
-      time,
-      doctor_id,
-      appointment_bookings (
-        patient_id
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(`
+        id,
+        date,
+        time,
+        doctor_id,
+        max_patients,
+        appointment_bookings ( patient_id ),
+        profiles:doctor_id (
+          full_name,
+          institution,
+          speciality
+        )
+      `);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+
+    const available = (data || []).filter(
+      slot => !slot.appointment_bookings?.some(
+        b => b.patient_id === user.id
       )
-    `);
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  // Filter out slots already booked by this patient
-  const available = (data || []).filter(slot => {
-    return !slot.appointment_bookings?.some(
-      b => b.patient_id === user.id
     );
-  });
 
-  setSlots(available);
-};
+    // Sort by time
+    available.sort((a, b) => a.time.localeCompare(b.time));
+
+    setSlots(available);
+    setFilteredSlots(available);
+    setLoading(false);
+  };
+
+  const applyFilter = () => {
+    if (!selectedDate) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    const filtered = slots.filter(s => s.date === selectedDate);
+    setAppliedDate(selectedDate);
+    setFilteredSlots(filtered);
+  };
+
+  const clearFilter = () => {
+    setSelectedDate("");
+    setAppliedDate("");
+    setFilteredSlots(slots);
+  };
 
   const bookSlot = async (slot) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      setBookingId(slot.id);
 
-      if (!user) {
-        toast.error("User not logged in");
-        return;
-      }
+      const { data: { user } } = await supabase.auth.getUser();
 
       const { error } = await supabase.from("appointment_bookings").insert({
         appointment_id: slot.id,
@@ -56,43 +88,134 @@ const fetchSlots = async () => {
         doctor_id: slot.doctor_id,
       });
 
-      if (error) {
-        toast.error(error.message);
-      } else {
+      if (error) toast.error(error.message);
+      else {
         toast.success("Appointment booked successfully");
+        fetchSlots();
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong");
+    } finally {
+      setBookingId(null);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Available Appointments</h1>
+    <div className="space-y-8 max-w-6xl mx-auto px-4">
 
-      {slots.length === 0 && (
-        <p className="text-gray-500">No slots available.</p>
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Available Appointments
+        </h1>
+        <p className="text-sm text-gray-500">
+          Choose a date and book your preferred doctor
+        </p>
+      </div>
+
+      {/* FILTER */}
+      <div className="bg-white p-5 rounded-2xl shadow flex flex-col md:flex-row gap-4 items-end">
+        <div>
+          <label className="text-sm text-gray-500">Select Date</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="border px-4 py-2 rounded-lg w-full"
+          />
+        </div>
+
+        <button
+          onClick={applyFilter}
+          className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition"
+        >
+          Show Slots
+        </button>
+
+        {appliedDate && (
+          <button
+            onClick={clearFilter}
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Clear filter
+          </button>
+        )}
+      </div>
+
+      {/* SKELETON */}
+      {loading && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl shadow animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-3 bg-gray-200 rounded w-1/3" />
+              <div className="h-3 bg-gray-200 rounded w-1/4" />
+              <div className="h-8 bg-gray-200 rounded w-24 mt-2" />
+            </div>
+          ))}
+        </div>
       )}
 
-      {slots.map((slot) => (
-        <div
-          key={slot.id}
-          className="bg-white p-4 rounded-xl shadow flex justify-between items-center"
-        >
-          <div>
-            <p className="font-medium">Date: {slot.date}</p>
-            <p className="text-sm text-gray-600">Time: {slot.time}</p>
-          </div>
-
-          <button
-            onClick={() => bookSlot(slot)}
-            className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          >
-            Book
-          </button>
+      {/* EMPTY */}
+      {!loading && filteredSlots.length === 0 && (
+        <div className="bg-white p-8 rounded-2xl shadow text-center text-gray-600">
+          No slots found for this date.
         </div>
-      ))}
+      )}
+
+      {/* LIST */}
+      {!loading && filteredSlots.length > 0 && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {filteredSlots.map((slot) => {
+            const booked = slot.appointment_bookings?.length || 0;
+            const capacity = slot.max_patients || DEFAULT_CAPACITY;
+            const full = booked >= capacity;
+
+            return (
+              <div
+                key={slot.id}
+                className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col sm:flex-row justify-between gap-4"
+              >
+                <div>
+                  <p className="text-lg font-semibold">
+                    Dr. {slot.profiles?.full_name || "Unknown"}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    {slot.profiles?.speciality || "General Physician"}
+                  </p>
+
+                  <p className="text-xs text-gray-400">
+                    {slot.profiles?.institution || "Independent Practice"}
+                  </p>
+
+                  <div className="pt-2 text-sm text-gray-600">
+                    <p>Date: {slot.date}</p>
+                    <p>Time: {slot.time}</p>
+                    <p className="text-xs mt-1">
+                      Slots: {booked}/{capacity}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => bookSlot(slot)}
+                  disabled={full || bookingId === slot.id}
+                  className={`px-5 py-2 rounded-lg transition ${
+                    full
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-orange-500 text-white hover:bg-orange-600"
+                  }`}
+                >
+                  {full
+                    ? "Fully Booked"
+                    : bookingId === slot.id
+                    ? "Booking..."
+                    : "Book"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

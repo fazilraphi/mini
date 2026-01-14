@@ -2,49 +2,61 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 
-const PatientProfile = () => {
-  const [form, setForm] = useState({
-    full_name: "",
-    age: "",
-    gender: "",
-    phone: "",
-    address: "",
-    blood_group: "",
-    emergency_contact: "",
-    medical_history: "",
-  });
+const initialForm = {
+  full_name: "",
+  age: "",
+  gender: "",
+  phone: "",
+  address: "",
+  blood_group: "",
+  emergency_contact: "",
+  medical_history: "",
+};
 
-  const [email, setEmail] = useState("");
+const PatientProfile = () => {
+  const [form, setForm] = useState(initialForm);
+
+  const [email, setEmail] = useState(""); // ✅ FIXED
   const [password, setPassword] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadProfile();
   }, []);
 
   const loadProfile = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     setEmail(user.email);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    if (data) setForm(data);
+    if (error) toast.error(error.message);
+    else if (data) setForm(data);
+
+    setLoading(false);
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const saveProfile = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    setSaving(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
 
     const { error } = await supabase
       .from("profiles")
@@ -53,36 +65,54 @@ const PatientProfile = () => {
 
     if (error) toast.error(error.message);
     else {
-      toast.success("Biodata saved successfully");
+      toast.success("Profile updated successfully");
       setIsEditing(false);
     }
-  };
 
-  const changeEmail = async () => {
-    const { error } = await supabase.auth.updateUser({ email });
-    if (error) toast.error(error.message);
-    else toast.success("Verification email sent to new address");
+    setSaving(false);
   };
 
   const changePassword = async () => {
+    if (!password) return toast.error("Password cannot be empty");
+
     const { error } = await supabase.auth.updateUser({ password });
     if (error) toast.error(error.message);
-    else toast.success("Password updated successfully");
+    else {
+      toast.success("Password updated successfully");
+      setPassword("");
+    }
   };
 
-  return (
-    <div className="max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-center">Patient Profile</h1>
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="bg-white p-8 rounded-2xl shadow animate-pulse space-y-4">
+          <div className="h-6 bg-gray-200 rounded w-1/3" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-4 bg-gray-200 rounded w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-      {/* BIODATA CARD */}
+  return (
+    <div className="max-w-3xl mx-auto space-y-10 px-4">
+      <h1 className="text-3xl font-bold text-center text-gray-900">
+        Patient Profile
+      </h1>
+
+      {/* BIODATA */}
       <div className="bg-white p-8 rounded-2xl shadow space-y-6">
-        <h2 className="text-lg font-medium text-center text-gray-800">
-          Biodata
-        </h2>
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-gray-800">Biodata</h2>
+          <p className="text-sm text-gray-500">
+            Manage your personal and medical information
+          </p>
+        </div>
 
         {!isEditing ? (
-          // ===== VIEW MODE =====
-          <div className="space-y-5 text-gray-700">
+          <div className="grid sm:grid-cols-2 gap-6 text-gray-700">
             <Field label="Full Name" value={form.full_name} />
             <Field label="Age" value={form.age} />
             <Field label="Gender" value={form.gender} />
@@ -92,38 +122,40 @@ const PatientProfile = () => {
             <Field label="Address" value={form.address} />
             <Field label="Medical History" value={form.medical_history} />
 
-            <button
-              onClick={() => setIsEditing(true)}
-              className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg"
-            >
-              Edit Profile
-            </button>
+            <div className="sm:col-span-2 flex justify-center pt-4">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg transition"
+              >
+                Edit Profile
+              </button>
+            </div>
           </div>
         ) : (
-          // ===== EDIT MODE =====
-          <div className="space-y-4">
-            <input
-              name="full_name"
-              placeholder="Full Name"
-              value={form.full_name || ""}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-
-            <input
-              name="age"
-              type="number"
-              placeholder="Age"
-              value={form.age || ""}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              { name: "full_name", placeholder: "Full Name" },
+              { name: "age", type: "number", placeholder: "Age" },
+              { name: "phone", placeholder: "Phone Number" },
+              { name: "blood_group", placeholder: "Blood Group" },
+              { name: "emergency_contact", placeholder: "Emergency Contact" },
+            ].map((field) => (
+              <input
+                key={field.name}
+                name={field.name}
+                value={form[field.name] || ""}
+                onChange={handleChange}
+                placeholder={field.placeholder}
+                type={field.type || "text"}
+                className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
+              />
+            ))}
 
             <select
               name="gender"
               value={form.gender || ""}
               onChange={handleChange}
-              className="border p-2 w-full rounded"
+              className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
             >
               <option value="">Select Gender</option>
               <option>Male</option>
@@ -131,57 +163,34 @@ const PatientProfile = () => {
               <option>Other</option>
             </select>
 
-            <input
-              name="phone"
-              placeholder="Phone Number"
-              value={form.phone || ""}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-
-            <input
-              name="blood_group"
-              placeholder="Blood Group (e.g. O+)"
-              value={form.blood_group || ""}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-
-            <input
-              name="emergency_contact"
-              placeholder="Emergency Contact"
-              value={form.emergency_contact || ""}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-
             <textarea
               name="address"
               placeholder="Address"
               value={form.address || ""}
               onChange={handleChange}
-              className="border p-2 w-full rounded"
+              className="border rounded-lg px-4 py-2 w-full sm:col-span-2"
             />
 
             <textarea
               name="medical_history"
-              placeholder="Medical History (optional)"
+              placeholder="Medical History"
               value={form.medical_history || ""}
               onChange={handleChange}
-              className="border p-2 w-full rounded"
+              className="border rounded-lg px-4 py-2 w-full sm:col-span-2"
             />
 
-            <div className="flex gap-3">
+            <div className="sm:col-span-2 flex gap-3 justify-center pt-2">
               <button
                 onClick={saveProfile}
-                className="bg-orange-500 text-white px-5 py-2 rounded"
+                disabled={saving}
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg disabled:opacity-60"
               >
-                Save Biodata
+                {saving ? "Saving..." : "Save"}
               </button>
 
               <button
                 onClick={() => setIsEditing(false)}
-                className="bg-gray-300 px-5 py-2 rounded"
+                className="bg-gray-100 px-6 py-2 rounded-lg"
               >
                 Cancel
               </button>
@@ -190,36 +199,35 @@ const PatientProfile = () => {
         )}
       </div>
 
-      {/* ACCOUNT SETTINGS (UNCHANGED) */}
-      <div className="bg-white p-6 rounded-xl shadow space-y-4">
-        <h2 className="font-semibold">Account Settings</h2>
+      {/* ACCOUNT SETTINGS */}
+      <div className="bg-white p-8 rounded-2xl shadow space-y-6">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Account Settings
+        </h2>
 
-        <input
-          className="border p-2 w-full rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div className="space-y-2">
+          <label className="text-sm text-gray-500">Email (read-only)</label>
+          <div className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 text-sm">
+            {email}
+          </div>
+        </div>
 
-        <button
-          onClick={changeEmail}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Change Email
-        </button>
-
-        <input
-          className="border p-2 w-full rounded"
-          type="password"
-          placeholder="New Password"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={changePassword}
-          className="bg-purple-500 text-white px-4 py-2 rounded"
-        >
-          Change Password
-        </button>
+        <div className="space-y-2">
+          <label className="text-sm text-gray-500">New Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
+            placeholder="Enter new password"
+          />
+          <button
+            onClick={changePassword}
+            className="bg-gray-900 text-white px-5 py-2 rounded-lg text-sm"
+          >
+            Update Password
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -227,8 +235,8 @@ const PatientProfile = () => {
 
 const Field = ({ label, value }) => (
   <div>
-    <p className="text-sm text-gray-500">{label}</p>
-    <p className="text-base">{value || "Not provided"}</p>
+    <p className="text-xs text-gray-500">{label}</p>
+    <p className="font-medium text-gray-800">{value || "Not provided"}</p>
   </div>
 );
 

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
+import toast from "react-hot-toast";
 
 const AppointmentCreator = () => {
   const [date, setDate] = useState("");
@@ -8,22 +9,60 @@ const AppointmentCreator = () => {
   const [ampm, setAmPm] = useState("AM");
   const [maxPatients, setMaxPatients] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [slots, setSlots] = useState([]);
+
+  const loadSlots = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .eq("doctor_id", user.id)
+      .gte("date", today) // only future & today
+      .order("date", { ascending: true });
+
+    if (!error) setSlots(data || []);
+  };
+
+  useEffect(() => {
+    loadSlots();
+  }, []);
 
   const createSlot = async () => {
-    if (!date) return alert("Please select a date");
+    if (!date) return toast.error("Please select a date");
 
-    setLoading(true);
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Convert 12-hour to 24-hour for DB
+    if (selectedDate < today) {
+      return toast.error("Cannot create slots in the past");
+    }
+
     let h = parseInt(hour);
     if (ampm === "PM" && h !== 12) h += 12;
     if (ampm === "AM" && h === 12) h = 0;
 
     const formattedTime = `${String(h).padStart(2, "0")}:${minute}:00`;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: existing } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("doctor_id", user.id)
+      .eq("date", date)
+      .eq("time", formattedTime)
+      .maybeSingle();
+
+    if (existing) {
+      setLoading(false);
+      return toast.error("Slot already exists");
+    }
 
     const { error } = await supabase.from("appointments").insert({
       doctor_id: user.id,
@@ -32,88 +71,130 @@ const AppointmentCreator = () => {
       max_patients: maxPatients,
     });
 
-    if (error) alert(error.message);
-    else alert("Appointment slot created");
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Slot created");
+      loadSlots();
+    }
 
     setLoading(false);
   };
 
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-md max-w-xl space-y-5">
-      <h2 className="text-lg font-semibold">Create Appointment Slot</h2>
+  const deleteSlot = async (id) => {
+    if (!confirm("Delete this slot?")) return;
 
-      {/* Date */}
-      <div>
-        <label className="text-sm font-medium">Date</label>
-        <input
-          type="date"
-          className="border p-2 w-full rounded mt-1"
-          onChange={(e) => setDate(e.target.value)}
-        />
+    const { error } = await supabase
+      .from("appointments")
+      .delete()
+      .eq("id", id);
+
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Slot deleted");
+      loadSlots();
+    }
+  };
+
+  return (
+    <div className="max-w-4xl space-y-10">
+
+      {/* CREATE SLOT */}
+      <div className="bg-white p-8 rounded-2xl shadow-sm border space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Create Slot</h2>
+          <p className="text-sm text-gray-500">Add your available consultation time.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="text-sm font-medium text-gray-700">Date</label>
+            <input
+              type="date"
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 w-full rounded-xl border px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700">Max Patients</label>
+            <input
+              type="number"
+              min={1}
+              value={maxPatients}
+              onChange={(e) => setMaxPatients(Number(e.target.value))}
+              className="mt-1 w-full rounded-xl border px-3 py-2"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-gray-700">Time</label>
+          <div className="flex gap-3 mt-1">
+            <select value={hour} onChange={(e) => setHour(e.target.value)} className="border rounded-xl px-3 py-2">
+              {Array.from({ length: 12 }, (_, i) => {
+                const v = String(i + 1).padStart(2, "0");
+                return <option key={v}>{v}</option>;
+              })}
+            </select>
+
+            <select value={minute} onChange={(e) => setMinute(e.target.value)} className="border rounded-xl px-3 py-2">
+              {["00", "15", "30", "45"].map((m) => (
+                <option key={m}>{m}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setAmPm(ampm === "AM" ? "PM" : "AM")}
+              className="border rounded-xl px-4 font-medium hover:bg-gray-50"
+            >
+              {ampm}
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={createSlot}
+          disabled={loading}
+          className="bg-orange-500 text-white py-2.5 px-6 rounded-xl hover:bg-orange-600 disabled:opacity-60"
+        >
+          {loading ? "Creating..." : "Add Slot"}
+        </button>
       </div>
 
-      {/* Time */}
-      <div>
-        <label className="text-sm font-medium">Time</label>
-        <div className="flex gap-2 mt-1">
-          <select
-            value={hour}
-            onChange={(e) => setHour(e.target.value)}
-            className="border p-2 rounded w-20"
-          >
-            {Array.from({ length: 12 }, (_, i) => {
-              const v = String(i + 1).padStart(2, "0");
-              return (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              );
-            })}
-          </select>
+      {/* UPCOMING SLOTS */}
+      <div className="bg-white p-8 rounded-2xl shadow-sm border space-y-6">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900">Upcoming Slots</h3>
+          <p className="text-sm text-gray-500">Manage your available appointments.</p>
+        </div>
 
-          <span className="self-center">:</span>
+        {slots.length === 0 && (
+          <p className="text-sm text-gray-500">No upcoming slots.</p>
+        )}
 
-          <select
-            value={minute}
-            onChange={(e) => setMinute(e.target.value)}
-            className="border p-2 rounded w-20"
-          >
-            {["00", "15", "30", "45"].map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-3">
+          {slots.map((slot) => (
+            <div
+              key={slot.id}
+              className="flex items-center justify-between border rounded-xl px-4 py-3 hover:bg-gray-50"
+            >
+              <div>
+                <p className="font-medium text-gray-900">{slot.date}</p>
+                <p className="text-sm text-gray-500">
+                  {slot.time} · Max {slot.max_patients} patients
+                </p>
+              </div>
 
-          <button
-            onClick={() => setAmPm(ampm === "AM" ? "PM" : "AM")}
-            className="border px-4 rounded font-medium hover:bg-gray-100"
-          >
-            {ampm}
-          </button>
+              <button
+                onClick={() => deleteSlot(slot.id)}
+                className="text-sm text-red-500 hover:underline"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
         </div>
       </div>
-
-      {/* Max Patients */}
-      <div>
-        <label className="text-sm font-medium">Max Patients</label>
-        <input
-          type="number"
-          min={1}
-          value={maxPatients}
-          onChange={(e) => setMaxPatients(Math.max(1, Number(e.target.value)))}
-          className="border p-2 w-full rounded mt-1"
-        />
-      </div>
-
-      {/* Button */}
-      <button
-        disabled={loading}
-        onClick={createSlot}
-        className="bg-orange-500 text-white px-5 py-2 rounded hover:bg-orange-600 disabled:opacity-60"
-      >
-        {loading ? "Creating..." : "Add Slot"}
-      </button>
     </div>
   );
 };

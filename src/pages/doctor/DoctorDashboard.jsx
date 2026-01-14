@@ -14,43 +14,56 @@ const DoctorDashboard = () => {
     window.location.href = "/login";
   };
 
+  const menuItem = (key, label) => (
+    <li
+      onClick={() => {
+        setActive(key);
+        setMenuOpen(false);
+      }}
+      className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 font-medium
+        ${
+          active === key
+            ? "bg-orange-500 text-white shadow-md scale-[1.02]"
+            : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+        }`}
+    >
+      {label}
+    </li>
+  );
+
   return (
     <div className="min-h-screen flex bg-gray-100">
 
-      {/* Sidebar */}
+      {/* SIDEBAR */}
       <div
-        className={`bg-white w-64 p-6 shadow-md fixed md:static z-20 h-full
+        className={`bg-white w-64 p-6 shadow-lg fixed md:static z-20 h-full transition-all
         ${menuOpen ? "block" : "hidden"} md:block`}
       >
-        <h2 className="text-xl font-bold mb-6">Doctor Panel</h2>
+        <h2 className="text-2xl font-bold mb-8 text-orange-600">
+          Doctor Panel
+        </h2>
 
-        <ul className="space-y-4">
-          <li onClick={() => { setActive("profile"); setMenuOpen(false); }}>
-            Profile
-          </li>
+        <ul className="space-y-2">
+          {menuItem("profile", "Profile")}
+          {menuItem("availability", "Availability (Create Slots)")}
+          {menuItem("appointments", "Booked Patients")}
+          {menuItem("prescriptions", "Consultations / Prescriptions")}
 
-          <li onClick={() => { setActive("availability"); setMenuOpen(false); }}>
-            Availability (Create Slots)
-          </li>
-
-          <li onClick={() => { setActive("appointments"); setMenuOpen(false); }}>
-            Booked Patients
-          </li>
-
-          <li onClick={() => { setActive("prescriptions"); setMenuOpen(false); }}>
-            Consultations / Prescriptions
-          </li>
-
-          <li>
-            <button onClick={handleLogout} className="text-red-500">
+          <li className="pt-4">
+            <button
+              onClick={handleLogout}
+              className="text-red-500 hover:underline"
+            >
               Logout
             </button>
           </li>
         </ul>
       </div>
 
-      {/* Main */}
-      <div className="flex-1 p-6 md:ml-64 mt-16">
+      {/* MAIN CONTENT */}
+      <div className="flex-1 p-6 md:ml-64 mt-16 md:mt-0 transition-all">
+
+        {/* Mobile hamburger */}
         <button
           className="md:hidden mb-4 text-2xl"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -58,10 +71,13 @@ const DoctorDashboard = () => {
           ☰
         </button>
 
-        {active === "profile" && <Profile />}
-        {active === "availability" && <AppointmentCreator />}
-        {active === "appointments" && <DoctorAppointments />}
-        {active === "prescriptions" && <DoctorConsultation />}
+        {/* Page content */}
+        <div className="animate-fadeIn">
+          {active === "profile" && <Profile />}
+          {active === "availability" && <AppointmentCreator />}
+          {active === "appointments" && <DoctorAppointments />}
+          {active === "prescriptions" && <DoctorConsultation />}
+        </div>
       </div>
     </div>
   );
