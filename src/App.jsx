@@ -10,7 +10,7 @@ import Register from "./pages/Register";
 
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
-
+import CompleteProfile from "./pages/CompleteProfile";
 import "./App.css";
 
 function App() {
@@ -43,6 +43,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
         </Route>
 
         {/* Dashboards without Navbar */}
