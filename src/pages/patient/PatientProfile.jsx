@@ -15,8 +15,7 @@ const initialForm = {
 
 const PatientProfile = () => {
   const [form, setForm] = useState(initialForm);
-
-  const [email, setEmail] = useState(""); // ✅ FIXED
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -41,7 +40,7 @@ const PatientProfile = () => {
       .single();
 
     if (error) toast.error(error.message);
-    else if (data) setForm(data);
+    else if (data) setForm({ ...initialForm, ...data });
 
     setLoading(false);
   };
@@ -53,14 +52,33 @@ const PatientProfile = () => {
     }));
   };
 
+  const validateForm = () => {
+    if (!form.full_name?.trim()) return "Full name is required";
+    if (!form.age || Number(form.age) <= 0) return "Valid age required";
+    if (!form.gender) return "Gender is required";
+    if (!form.phone?.trim()) return "Phone is required";
+    if (!form.address?.trim()) return "Address is required";
+    if (!form.blood_group?.trim()) return "Blood group is required";
+    if (!form.emergency_contact?.trim()) return "Emergency contact is required";
+    return null;
+  };
+
   const saveProfile = async () => {
+    const validationError = validateForm();
+    if (validationError) return toast.error(validationError);
+
     setSaving(true);
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    const payload = {
+      ...form,
+      age: Number(form.age),
+    };
+
     const { error } = await supabase
       .from("profiles")
-      .update(form)
+      .update(payload)
       .eq("id", user.id);
 
     if (error) toast.error(error.message);
@@ -76,6 +94,7 @@ const PatientProfile = () => {
     if (!password) return toast.error("Password cannot be empty");
 
     const { error } = await supabase.auth.updateUser({ password });
+
     if (error) toast.error(error.message);
     else {
       toast.success("Password updated successfully");

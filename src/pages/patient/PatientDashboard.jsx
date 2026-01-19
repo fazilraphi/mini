@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Profile from "./PatientProfile";
 import Appointments from "./Appointments";
 import Prescriptions from "./PatientPrescriptions";
@@ -7,6 +7,51 @@ import { supabase } from "../../supabaseClient";
 const PatientDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState("appointments");
+
+  useEffect(() => {
+    const enforceCompletion = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error || !profile) return;
+
+      const patientRequired = [
+        "full_name",
+        "age",
+        "gender",
+        "phone",
+        "address",
+        "blood_group",
+        "emergency_contact",
+      ];
+
+      const doctorRequired = [
+        "full_name",
+        "institution",
+        "speciality",
+      ];
+
+      const requiredFields =
+        profile.role === "patient" ? patientRequired : doctorRequired;
+
+      const incomplete = requiredFields.some(
+        (field) =>
+          !profile[field] || profile[field].toString().trim() === ""
+      );
+
+      if (incomplete) {
+        window.location.href = "/complete-profile";
+      }
+    };
+
+    enforceCompletion();
+  }, []);
 
   const handleNav = (page) => {
     setActive(page);
@@ -78,7 +123,7 @@ const PatientDashboard = () => {
           ☰
         </button>
 
-        {/* Page content with subtle animation */}
+        {/* Page content */}
         <div className="animate-fadeIn">
           {active === "profile" && <Profile />}
           {active === "appointments" && <Appointments />}

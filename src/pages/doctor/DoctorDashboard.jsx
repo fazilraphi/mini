@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Profile from "./Profile";
 import AppointmentCreator from "./AppointmentCreator";
 import DoctorAppointments from "./DoctorAppointments";
@@ -8,6 +8,51 @@ import { supabase } from "../../supabaseClient";
 const DoctorDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState("profile");
+
+  useEffect(() => {
+    const enforceCompletion = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error || !profile) return;
+
+      const patientRequired = [
+        "full_name",
+        "age",
+        "gender",
+        "phone",
+        "address",
+        "blood_group",
+        "emergency_contact",
+      ];
+
+      const doctorRequired = [
+        "full_name",
+        "institution",
+        "speciality",
+      ];
+
+      const requiredFields =
+        profile.role === "patient" ? patientRequired : doctorRequired;
+
+      const incomplete = requiredFields.some(
+        (field) =>
+          !profile[field] || profile[field].toString().trim() === ""
+      );
+
+      if (incomplete) {
+        window.location.href = "/complete-profile";
+      }
+    };
+
+    enforceCompletion();
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

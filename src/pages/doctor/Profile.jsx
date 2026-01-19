@@ -28,13 +28,30 @@ const Profile = () => {
         .eq("id", user.id)
         .single();
 
-      if (!error && data) setProfile(data);
+      if (!error && data) {
+        setProfile({
+          full_name: data.full_name || "",
+          institution: data.institution || "",
+          speciality: data.speciality || "",
+          avatar_url: data.avatar_url || "",
+        });
+      }
     };
 
     loadProfile();
   }, []);
 
+  const validateProfile = () => {
+    if (!profile.full_name.trim()) return "Full name is required";
+    if (!profile.institution.trim()) return "Institution is required";
+    if (!profile.speciality.trim()) return "Speciality is required";
+    return null;
+  };
+
   const updateProfile = async () => {
+    const validationError = validateProfile();
+    if (validationError) return toast.error(validationError);
+
     setLoading(true);
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -42,10 +59,10 @@ const Profile = () => {
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: profile.full_name,
-        institution: profile.institution,
-        speciality: profile.speciality,
-        avatar_url: profile.avatar_url,
+        full_name: profile.full_name.trim(),
+        institution: profile.institution.trim(),
+        speciality: profile.speciality.trim(),
+        avatar_url: profile.avatar_url.trim() || null,
       })
       .eq("id", user.id);
 
@@ -111,17 +128,23 @@ const Profile = () => {
               <div className="space-y-4">
                 <div>
                   <p className="text-xs text-gray-500">Full Name</p>
-                  <p className="font-medium">{profile.full_name || "Not provided"}</p>
+                  <p className="font-medium">
+                    {profile.full_name || "Not provided"}
+                  </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-gray-500">Institution</p>
-                  <p className="font-medium">{profile.institution || "Not provided"}</p>
+                  <p className="font-medium">
+                    {profile.institution || "Not provided"}
+                  </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-gray-500">Speciality</p>
-                  <p className="font-medium">{profile.speciality || "Not provided"}</p>
+                  <p className="font-medium">
+                    {profile.speciality || "Not provided"}
+                  </p>
                 </div>
 
                 <button
@@ -136,7 +159,7 @@ const Profile = () => {
                 <input
                   className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
                   placeholder="Full Name"
-                  value={profile.full_name || ""}
+                  value={profile.full_name}
                   onChange={(e) =>
                     setProfile({ ...profile, full_name: e.target.value })
                   }
@@ -145,7 +168,7 @@ const Profile = () => {
                 <input
                   className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
                   placeholder="Institution / Hospital"
-                  value={profile.institution || ""}
+                  value={profile.institution}
                   onChange={(e) =>
                     setProfile({ ...profile, institution: e.target.value })
                   }
@@ -154,7 +177,7 @@ const Profile = () => {
                 <input
                   className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
                   placeholder="Speciality (e.g. Cardiologist)"
-                  value={profile.speciality || ""}
+                  value={profile.speciality}
                   onChange={(e) =>
                     setProfile({ ...profile, speciality: e.target.value })
                   }
@@ -163,7 +186,7 @@ const Profile = () => {
                 <input
                   className="border rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-orange-500 outline-none"
                   placeholder="Avatar URL (optional)"
-                  value={profile.avatar_url || ""}
+                  value={profile.avatar_url}
                   onChange={(e) =>
                     setProfile({ ...profile, avatar_url: e.target.value })
                   }
@@ -175,7 +198,7 @@ const Profile = () => {
                     disabled={loading}
                     className="bg-orange-500 text-white px-5 py-2 rounded-lg text-sm"
                   >
-                    Save
+                    {loading ? "Saving..." : "Save"}
                   </button>
 
                   <button
@@ -194,7 +217,9 @@ const Profile = () => {
       {/* ACCOUNT SETTINGS */}
       <div className="bg-white rounded-2xl shadow-sm border p-8 space-y-6">
         <div>
-          <h2 className="text-lg font-medium text-gray-800">Account Settings</h2>
+          <h2 className="text-lg font-medium text-gray-800">
+            Account Settings
+          </h2>
           <p className="text-sm text-gray-500">
             Manage login credentials securely
           </p>
