@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import PatientProfile from "../components/patient/PatientProfile";
-import DoctorProfile from "../components/doctor/Profile";
+import PatientProfile from "./patient/PatientProfile";
+import DoctorProfile from "./doctor/Profile";
+
 
 const CompleteProfile = () => {
   const [role, setRole] = useState(null);

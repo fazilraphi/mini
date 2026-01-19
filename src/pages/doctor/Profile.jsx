@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ ADDED
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 
 const Profile = () => {
+  const navigate = useNavigate(); // ✅ ADDED
+
   const [profile, setProfile] = useState({
     full_name: "",
     institution: "",
@@ -48,39 +51,38 @@ const Profile = () => {
     return null;
   };
 
-const updateProfile = async () => {
-  const validationError = validateProfile();
-  if (validationError) return toast.error(validationError);
+  const updateProfile = async () => {
+    const validationError = validateProfile();
+    if (validationError) return toast.error(validationError);
 
-  setLoading(true);
+    setLoading(true);
 
-  const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      full_name: profile.full_name.trim(),
-      institution: profile.institution.trim(),
-      speciality: profile.speciality.trim(),
-      avatar_url: profile.avatar_url.trim() || null,
-    })
-    .eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: profile.full_name.trim(),
+        institution: profile.institution.trim(),
+        speciality: profile.speciality.trim(),
+        avatar_url: profile.avatar_url.trim() || null,
+      })
+      .eq("id", user.id);
 
-  if (error) {
-    toast.error(error.message);
-  } else {
-    toast.success("Profile updated successfully");
-    setIsEditing(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Profile updated successfully");
+      setIsEditing(false);
 
-    // ✅ ADD THIS: redirect after successful completion
-    setTimeout(() => {
-      window.location.href = "/doctor-dashboard";
-    }, 800);
-  }
+      // ✅ SAFE REDIRECT (NO PAGE RELOAD)
+      setTimeout(() => {
+        navigate("/doctor-dashboard", { replace: true });
+      }, 800);
+    }
 
-  setLoading(false);
-};
-
+    setLoading(false);
+  };
 
   const updatePassword = async () => {
     if (!password) return toast.error("Password cannot be empty");

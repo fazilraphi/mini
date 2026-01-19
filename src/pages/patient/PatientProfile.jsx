@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ ADDED
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 
@@ -14,6 +15,8 @@ const initialForm = {
 };
 
 const PatientProfile = () => {
+  const navigate = useNavigate(); // ✅ ADDED
+
   const [form, setForm] = useState(initialForm);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,39 +66,38 @@ const PatientProfile = () => {
     return null;
   };
 
-const saveProfile = async () => {
-  const validationError = validateForm();
-  if (validationError) return toast.error(validationError);
+  const saveProfile = async () => {
+    const validationError = validateForm();
+    if (validationError) return toast.error(validationError);
 
-  setSaving(true);
+    setSaving(true);
 
-  const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  const payload = {
-    ...form,
-    age: Number(form.age),
+    const payload = {
+      ...form,
+      age: Number(form.age),
+    };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(payload)
+      .eq("id", user.id);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Profile updated successfully");
+      setIsEditing(false);
+
+      // ✅ SAFE SPA REDIRECT (no reload)
+      setTimeout(() => {
+        navigate("/patient-dashboard", { replace: true });
+      }, 800);
+    }
+
+    setSaving(false);
   };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update(payload)
-    .eq("id", user.id);
-
-  if (error) {
-    toast.error(error.message);
-  } else {
-    toast.success("Profile updated successfully");
-    setIsEditing(false);
-
-    // ✅ ADD THIS: redirect after successful completion
-    setTimeout(() => {
-      window.location.href = "/patient-dashboard";
-    }, 800);
-  }
-
-  setSaving(false);
-};
-
 
   const changePassword = async () => {
     if (!password) return toast.error("Password cannot be empty");
