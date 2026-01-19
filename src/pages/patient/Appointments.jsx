@@ -17,58 +17,89 @@ const Appointments = () => {
     fetchSlots();
   }, []);
 
-  const fetchSlots = async () => {
-    setLoading(true);
+ const fetchSlots = async () => {
+  setLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await supabase
-      .from("appointments")
-      .select(`
-        id,
-        date,
-        time,
-        doctor_id,
-        max_patients,
-        appointment_bookings ( patient_id ),
-        profiles:doctor_id (
-          full_name,
-          institution,
-          speciality
-        )
-      `);
-
-    if (error) {
-      console.error("Supabase error:", error);
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
-
-    const available = (data || []).filter(
-      slot => !slot.appointment_bookings?.some(
-        b => b.patient_id === user.id
+  // 1. Fetch all upcoming slots
+  const { data: slotsData, error: slotsError } = await supabase
+    .from("appointments")
+    .select(`
+      id,
+      date,
+      time,
+      doctor_id,
+      max_patients,
+      profiles:doctor_id (
+        full_name,
+        institution,
+        speciality
       )
-    );
+    `)
+    .gte("date", today)
+    .order("date", { ascending: true });
 
-    // Sort by time
-    available.sort((a, b) => a.time.localeCompare(b.time));
-
-    setSlots(available);
-    setFilteredSlots(available);
+  if (slotsError) {
+    toast.error(slotsError.message);
     setLoading(false);
-  };
+    return;
+  }
 
-  const applyFilter = () => {
-    if (!selectedDate) {
-      toast.error("Please select a date");
-      return;
-    }
+  // 2. Fetch booking counts separately
+  const { data: bookingCounts } = await supabase
+    .from("appointment_bookings")
+    .select("appointment_id");
 
-    const filtered = slots.filter(s => s.date === selectedDate);
-    setAppliedDate(selectedDate);
-    setFilteredSlots(filtered);
-  };
+  const countMap = {};
+  (bookingCounts || []).forEach(b => {
+    countMap[b.appointment_id] = (countMap[b.appointment_id] || 0) + 1;
+  });
+
+  // 3. Merge counts into slots
+  const merged = (slotsData || []).map(slot => ({
+    ...slot,
+    bookedCount: countMap[slot.id] || 0
+  }));
+
+  // 4. Remove slots already booked by this user
+  const { data: myBookings } = await supabase
+    .from("appointment_bookings")
+    .select("appointment_id")
+    .eq("patient_id", user.id);
+
+  const bookedSet = new Set((myBookings || []).map(b => b.appointment_id));
+
+  const available = merged.filter(s => !bookedSet.has(s.id));
+
+  available.sort((a, b) => a.time.localeCompare(b.time));
+
+  setSlots(available);
+  setFilteredSlots(available);
+  setLoading(false);
+};
+
+
+const applyFilter = () => {
+  if (!selectedDate) {
+    toast.error("Please select a date");
+    return;
+  }
+
+  // Convert dd-mm-yyyy → yyyy-mm-dd
+  const parts = selectedDate.split("-");
+  const normalized =
+    parts[0].length === 4
+      ? selectedDate
+      : `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+  const filtered = slots.filter(s => s.date === normalized);
+
+  setAppliedDate(selectedDate);
+  setFilteredSlots(filtered);
+};
+
 
   const clearFilter = () => {
     setSelectedDate("");
@@ -165,7 +196,8 @@ const Appointments = () => {
       {!loading && filteredSlots.length > 0 && (
         <div className="grid md:grid-cols-2 gap-6">
           {filteredSlots.map((slot) => {
-            const booked = slot.appointment_bookings?.length || 0;
+           const booked = slot.bookedCount || 0;
+
             const capacity = slot.max_patients || DEFAULT_CAPACITY;
             const full = booked >= capacity;
 

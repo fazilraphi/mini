@@ -14,22 +14,34 @@ const DoctorConsultation = () => {
     { medicine_name: "", dosage: "", frequency: "", duration: "" },
   ]);
 
+  const [selectedDate, setSelectedDate] = useState("");
+
   useEffect(() => {
-    loadBookings();
-  }, []);
+    if (selectedDate) loadBookings();
+  }, [selectedDate]);
 
   const loadBookings = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
     const { data, error } = await supabase
       .from("appointment_bookings")
       .select(`
         id,
         patient_id,
         booked_at,
+        appointments!inner(date),
         profiles:patient_id(full_name, age, gender, phone, medical_history)
       `)
-      .order("booked_at", { ascending: true }); // FIFO preserved
+      .eq("appointments.date", selectedDate)
+      .order("booked_at", { ascending: true });
 
-    if (!error) setBookings(data || []);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setBookings(data || []);
+      setSelected(null);
+      setHistory([]);
+    }
   };
 
   const loadHistory = async (patientId) => {
@@ -107,12 +119,27 @@ const DoctorConsultation = () => {
         <p className="text-gray-500">Manage consultations and patient records</p>
       </div>
 
+      {/* DATE FILTER (minimal addition, layout preserved) */}
+      <div className="bg-white p-4 rounded-xl shadow w-fit">
+        <label className="text-sm text-gray-500 block">Select Date</label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="border px-4 py-2 rounded"
+        />
+      </div>
+
       {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {/* LEFT */}
         <div className="bg-white p-6 rounded-2xl shadow space-y-4">
           <h2 className="font-semibold text-lg">Patient Queue</h2>
+
+          {bookings.length === 0 && (
+            <p className="text-sm text-gray-500">No patients for this date</p>
+          )}
 
           {bookings.map((b, i) => (
             <div
@@ -202,8 +229,7 @@ const DoctorConsultation = () => {
               <input placeholder="Duration" className="border p-2 rounded" onChange={(e)=>updateMed(i,"duration",e.target.value)} />
             </div>
           ))}
-         
-          {/* BUTTONS NOW ON SEPARATE LINES */}
+
           <button onClick={addRow} className="text-orange-600 text-sm text-left">
             + Add another medicine
           </button>

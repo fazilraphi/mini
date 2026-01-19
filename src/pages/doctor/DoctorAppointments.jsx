@@ -2,21 +2,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 
-const MAX_PATIENTS = 10; // adjust if dynamic later
-
 const DoctorAppointments = () => {
   const [bookings, setBookings] = useState([]);
   const [filtered, setFiltered] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDate, setSelectedDate] = useState("");
 
+  const [selected, setSelected] = useState(null);
   const [patient, setPatient] = useState(null);
   const [history, setHistory] = useState([]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [medicines, setMedicines] = useState([]);
-
-  const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     loadBookings();
@@ -31,7 +29,9 @@ const DoctorAppointments = () => {
         id,
         booked_at,
         patient_id,
+        appointment_id,
         appointments (
+          id,
           date,
           time,
           max_patients
@@ -43,7 +43,7 @@ const DoctorAppointments = () => {
         )
       `)
       .eq("doctor_id", user.id)
-      .order("booked_at", { ascending: true }); // FIFO
+      .order("booked_at", { ascending: true });
 
     setBookings(data || []);
   };
@@ -51,11 +51,24 @@ const DoctorAppointments = () => {
   const applyFilter = () => {
     if (!selectedDate) return toast.error("Select a date");
 
-    const result = bookings.filter(
+    const slots = bookings.filter(
       b => b.appointments?.date === selectedDate
     );
 
-    setFiltered(result);
+    setFiltered(slots);
+    setSelectedSlot(null);
+  };
+
+  const openSlot = (appointmentId) => {
+    const slotBookings = filtered.filter(
+      b => b.appointment_id === appointmentId
+    );
+
+    setSelectedSlot({
+      id: appointmentId,
+      bookings: slotBookings,
+      capacity: slotBookings[0]?.appointments?.max_patients || 1,
+    });
   };
 
   const openPatient = async (booking) => {
@@ -115,16 +128,14 @@ const DoctorAppointments = () => {
     }
 
     toast.success("Saved");
-    setTitle(""); setDescription(""); setMedicines([]);
+    setTitle(""); 
+    setDescription(""); 
+    setMedicines([]);
     openPatient(selected);
   };
 
-  const bookedCount = filtered.length;
-  const capacity = filtered[0]?.appointments?.max_patients || MAX_PATIENTS;
-
   return (
     <div className="space-y-8 max-w-6xl">
-
       <h1 className="text-3xl font-bold font-exo2">Booked Patients</h1>
 
       {!selected ? (
@@ -145,42 +156,68 @@ const DoctorAppointments = () => {
             </button>
           </div>
 
-          {/* DONUT GRAPH */}
+          {/* SLOT LIST */}
           {filtered.length > 0 && (
-            <SlotChart booked={bookedCount} capacity={capacity} />
+            <div className="space-y-3">
+              {[...new Map(filtered.map(b => [b.appointment_id, b])).values()].map(slot => (
+                <div
+                  key={slot.appointment_id}
+                  className="bg-white p-5 rounded-xl shadow flex justify-between"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {slot.appointments.date} — {slot.appointments.time}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Max: {slot.appointments.max_patients}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => openSlot(slot.appointment_id)}
+                    className="bg-orange-500 text-white px-4 py-2 rounded"
+                  >
+                    View Patients
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
 
-          {/* FIFO LIST */}
-          <div className="space-y-4">
-            {filtered.map((b, i) => (
-              <div
-                key={b.id}
-                className="bg-white p-5 rounded-xl shadow flex justify-between"
-              >
-                <div>
-                  <p className="font-semibold">
-                    {i + 1}. {b.profiles?.full_name}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {b.profiles?.gender}, {b.profiles?.age} yrs
-                  </p>
-                </div>
+          {/* DONUT + PATIENT LIST */}
+          {selectedSlot && (
+            <>
+              <SlotChart
+                booked={selectedSlot.bookings.length}
+                capacity={selectedSlot.capacity}
+              />
 
-                <button
-                  onClick={() => openPatient(b)}
-                  className="bg-orange-500 text-white px-4 py-2 rounded"
-                >
-                  Open
-                </button>
+              <div className="space-y-4">
+                {selectedSlot.bookings.map((b, i) => (
+                  <div key={b.id} className="bg-white p-5 rounded-xl shadow flex justify-between">
+                    <div>
+                      <p className="font-semibold">
+                        {i + 1}. {b.profiles?.full_name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {b.profiles?.gender}, {b.profiles?.age} yrs
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => openPatient(b)}
+                      className="bg-orange-500 text-white px-4 py-2 rounded"
+                    >
+                      Open
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-
-            {filtered.length === 0 && (
-              <p className="text-gray-500">No patients for this slot.</p>
-            )}
-          </div>
+            </>
+          )}
         </>
       ) : (
+        /* CONSULTATION VIEW UNCHANGED */
         <div className="space-y-6">
           <button onClick={() => setSelected(null)} className="text-sm text-gray-500">← Back</button>
 
@@ -229,7 +266,6 @@ const DoctorAppointments = () => {
 };
 
 /* ------------------ Donut Chart ------------------ */
-
 const SlotChart = ({ booked, capacity }) => {
   const percent = Math.min(100, (booked / capacity) * 100);
   const strokeDash = `${percent} ${100 - percent}`;
