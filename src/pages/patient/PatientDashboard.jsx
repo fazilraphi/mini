@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Profile from "./PatientProfile";
 import Appointments from "./Appointments";
+import MyAppointments from "./Myappointments";
 import Prescriptions from "./PatientPrescriptions";
 import { supabase } from "../../supabaseClient";
 
@@ -10,7 +11,9 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     const enforceCompletion = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile, error } = await supabase
@@ -31,18 +34,13 @@ const PatientDashboard = () => {
         "emergency_contact",
       ];
 
-      const doctorRequired = [
-        "full_name",
-        "institution",
-        "speciality",
-      ];
+      const doctorRequired = ["full_name", "institution", "speciality"];
 
       const requiredFields =
         profile.role === "patient" ? patientRequired : doctorRequired;
 
       const incomplete = requiredFields.some(
-        (field) =>
-          !profile[field] || profile[field].toString().trim() === ""
+        (field) => !profile[field] || profile[field].toString().trim() === "",
       );
 
       if (incomplete) {
@@ -79,7 +77,6 @@ const PatientDashboard = () => {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-
       {/* Overlay for mobile */}
       {menuOpen && (
         <div
@@ -93,12 +90,11 @@ const PatientDashboard = () => {
         className={`bg-white w-64 p-6 shadow-lg fixed md:static z-20 h-full
         ${menuOpen ? "block" : "hidden"} md:block`}
       >
-        <h2 className="text-2xl font-bold mb-8 text-gray-900">
-          Patient Panel
-        </h2>
+        <h2 className="text-2xl font-bold mb-8 text-gray-900">Patient Panel</h2>
 
         <ul className="space-y-3">
           {navItem("appointments", "Appointments")}
+          {navItem("my-appointments", "My Appointments")}
           {navItem("prescriptions", "Prescriptions")}
           {navItem("profile", "Profile")}
 
@@ -127,6 +123,7 @@ const PatientDashboard = () => {
         <div className="animate-fadeIn">
           {active === "profile" && <Profile />}
           {active === "appointments" && <Appointments />}
+          {active === "my-appointments" && <MyAppointments />}
           {active === "prescriptions" && <Prescriptions />}
         </div>
       </div>

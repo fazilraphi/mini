@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../supabaseClient";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("patient");
@@ -13,7 +15,7 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -23,11 +25,24 @@ const Register = () => {
 
     if (error) {
       toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // When email confirmation is disabled,
+    // Supabase returns a session immediately
+    if (data.session) {
+      toast.success("Account created successfully!");
+
+      const userRole = data.user.user_metadata.role;
+
+      if (userRole === "doctor") {
+        navigate("/doctor-dashboard");
+      } else {
+        navigate("/patient-dashboard");
+      }
     } else {
-      toast.success("Account created. Verify email before login.");
-      setEmail("");
-      setPassword("");
-      setRole("patient");
+      toast.error("Signup successful, but no active session found.");
     }
 
     setLoading(false);
@@ -36,15 +51,15 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg grid md:grid-cols-2 overflow-hidden">
-
         {/* LEFT PANEL */}
         <div className="hidden md:flex flex-col justify-center px-10 bg-orange-50">
           <h1 className="text-4xl font-bold mb-4">
             Welcome to <span className="text-orange-500">HealthSync</span>
           </h1>
           <p className="text-gray-600 leading-relaxed">
-            Create your account to access a secure healthcare management platform designed
-            for patients and doctors to collaborate seamlessly.
+            Create your account to access a secure healthcare management
+            platform designed for patients and doctors to collaborate
+            seamlessly.
           </p>
         </div>
 
@@ -56,7 +71,6 @@ const Register = () => {
           </p>
 
           <form onSubmit={handleRegister} className="space-y-6">
-
             {/* EMAIL */}
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
@@ -85,7 +99,9 @@ const Register = () => {
 
             {/* ROLE SELECTOR */}
             <div>
-              <label className="block text-sm font-medium mb-2">Register As</label>
+              <label className="block text-sm font-medium mb-2">
+                Register As
+              </label>
               <div className="flex bg-gray-100 rounded-xl p-1">
                 <button
                   type="button"
@@ -124,7 +140,10 @@ const Register = () => {
           {/* FOOTER */}
           <p className="text-sm text-center mt-6 text-gray-600">
             Already have an account?{" "}
-            <Link to="/login" className="text-orange-500 font-medium hover:underline">
+            <Link
+              to="/login"
+              className="text-orange-500 font-medium hover:underline"
+            >
               Login
             </Link>
           </p>
