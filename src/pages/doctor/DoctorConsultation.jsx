@@ -88,10 +88,7 @@ const DoctorConsultation = () => {
     });
   };
 
-  // ================= FILTER BY SLOT =================
-  const filteredBookings = useMemo(() => {
-    return bookings.filter((b) => b.appointments.time === formattedSlot);
-  }, [bookings, formattedSlot]);
+
 
   // ================= LOAD HISTORY =================
   const loadHistory = async (patientId) => {

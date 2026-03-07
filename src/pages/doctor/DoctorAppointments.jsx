@@ -173,13 +173,13 @@ const DoctorAppointments = () => {
 
     const { data } = await supabase
       .from("medical_records")
-      .select(
+      .select(`
         id,
         title,
         description,
         created_at,
         prescriptions(medicine_name, dosage, frequency, duration)
-      )
+      `)
       .eq("patient_id", booking.patient_id)
       .order("created_at", { ascending: false });
 
