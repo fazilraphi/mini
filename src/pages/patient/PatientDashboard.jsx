@@ -1,23 +1,24 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
 import { useNavigate } from "react-router-dom";
-
+import ChatList from "../../components/ChatList";
 import Appointments from "./Appointments";
+import MyAppointments from "./Myappointments";
 import Prescriptions from "./PatientPrescriptions";
 import PatientProfile from "./PatientProfile";
 
-
 const PatientDashboard = () => {
+
   const navigate = useNavigate();
 
   const [activePage, setActivePage] = useState("dashboard");
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
+
     const loadProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         navigate("/login");
@@ -39,7 +40,7 @@ const PatientDashboard = () => {
         "phone",
         "address",
         "blood_group",
-        "emergency_contact",
+        "emergency_contact"
       ];
 
       const incomplete = required.some(
@@ -49,27 +50,38 @@ const PatientDashboard = () => {
       if (incomplete) {
         navigate("/complete-profile");
       }
+
     };
 
     loadProfile();
+
   }, [navigate]);
 
+
+
   const logout = async () => {
+
     await supabase.auth.signOut();
     navigate("/login");
+
   };
+
 
   if (!profile) {
     return <div className="p-10 text-gray-500">Loading dashboard...</div>;
   }
 
+
   return (
+
     <div className="min-h-screen flex bg-[#F6F8FB]">
 
       {/* SIDEBAR */}
+
       <div className="w-64 bg-white shadow-md p-6 flex flex-col justify-between">
 
         <div>
+
           <h2
             className="text-xl font-bold mb-10 text-cyan-600 cursor-pointer"
             onClick={() => setActivePage("dashboard")}
@@ -89,6 +101,7 @@ const PatientDashboard = () => {
               Dashboard
             </li>
 
+
             <li
               onClick={() => setActivePage("appointments")}
               className={`cursor-pointer px-4 py-2 rounded-lg ${activePage === "appointments"
@@ -98,6 +111,18 @@ const PatientDashboard = () => {
             >
               Appointments
             </li>
+
+
+            <li
+              onClick={() => setActivePage("myappointments")}
+              className={`cursor-pointer px-4 py-2 rounded-lg ${activePage === "myappointments"
+                ? "bg-cyan-500 text-white"
+                : "hover:text-cyan-600"
+                }`}
+            >
+              My Appointments
+            </li>
+
 
             <li
               onClick={() => setActivePage("prescriptions")}
@@ -110,6 +135,16 @@ const PatientDashboard = () => {
             </li>
 
             <li
+              onClick={() => setActivePage("chat")}
+              className={`cursor-pointer px-4 py-2 rounded-lg ${activePage === "chat"
+                ? "bg-cyan-500 text-white"
+                : "hover:text-cyan-600"
+                }`}
+            >
+              Chat
+            </li>
+
+            <li
               onClick={() => setActivePage("records")}
               className={`cursor-pointer px-4 py-2 rounded-lg ${activePage === "records"
                 ? "bg-cyan-500 text-white"
@@ -118,6 +153,7 @@ const PatientDashboard = () => {
             >
               Medical Records
             </li>
+
 
             <li
               onClick={() => setActivePage("settings")}
@@ -130,7 +166,9 @@ const PatientDashboard = () => {
             </li>
 
           </ul>
+
         </div>
+
 
         <div className="space-y-4">
 
@@ -149,12 +187,18 @@ const PatientDashboard = () => {
 
       </div>
 
+
+
       {/* MAIN CONTENT */}
+
       <div className="flex-1 p-8">
 
         {/* DASHBOARD */}
+
         {activePage === "dashboard" && (
+
           <>
+
             <div className="mb-8">
               <h1 className="text-3xl font-bold">
                 Welcome back, {profile.full_name}
@@ -162,7 +206,11 @@ const PatientDashboard = () => {
               <p className="text-gray-500">Your health dashboard</p>
             </div>
 
-            <h2 className="text-xl font-semibold mb-4">Health Overview</h2>
+
+            <h2 className="text-xl font-semibold mb-4">
+              Health Overview
+            </h2>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
 
@@ -171,15 +219,18 @@ const PatientDashboard = () => {
                 <p className="text-2xl font-bold">{profile.blood_group}</p>
               </div>
 
+
               <div className="bg-white p-6 rounded-xl shadow">
                 <p className="text-gray-500 text-sm">Age</p>
                 <p className="text-2xl font-bold">{profile.age}</p>
               </div>
 
+
               <div className="bg-white p-6 rounded-xl shadow">
                 <p className="text-gray-500 text-sm">Gender</p>
                 <p className="text-2xl font-bold">{profile.gender}</p>
               </div>
+
 
               <div className="bg-white p-6 rounded-xl shadow">
                 <p className="text-gray-500 text-sm">Phone</p>
@@ -190,9 +241,14 @@ const PatientDashboard = () => {
 
             </div>
 
+
             {/* QUICK ACTIONS */}
+
             <div className="bg-white p-6 rounded-xl shadow w-full max-w-md">
-              <h3 className="font-semibold mb-4">Quick Actions</h3>
+
+              <h3 className="font-semibold mb-4">
+                Quick Actions
+              </h3>
 
               <button
                 onClick={() => setActivePage("appointments")}
@@ -202,29 +258,49 @@ const PatientDashboard = () => {
               </button>
 
               <button
-                onClick={() => setActivePage("appointments")}
+                onClick={() => setActivePage("chat")}
                 className="w-full border py-2 rounded-lg"
               >
                 Message Doctor
               </button>
+
             </div>
+
           </>
+
         )}
 
+
         {/* APPOINTMENTS */}
+
         {activePage === "appointments" && <Appointments />}
 
+
+        {/* MY APPOINTMENTS */}
+
+        {activePage === "myappointments" && <MyAppointments />}
+
+
         {/* PRESCRIPTIONS */}
+
         {activePage === "prescriptions" && <Prescriptions />}
 
 
-
         {/* SETTINGS */}
+
         {activePage === "settings" && <PatientProfile />}
 
+
+        {/* CHAT PAGE FIX */}
+
+        {activePage === "chat" && <ChatList />}
+
       </div>
+
     </div>
+
   );
+
 };
 
 export default PatientDashboard;

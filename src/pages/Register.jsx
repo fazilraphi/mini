@@ -17,32 +17,48 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { role, full_name: name },
-      },
-    });
+    try {
 
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (data.session) {
-      toast.success("Account created successfully!");
+      if (error) throw error;
 
-      const userRole = data.user.user_metadata.role;
+      const user = data.user;
 
-      if (userRole === "doctor") {
-        navigate("/doctor-dashboard");
+      if (!user) {
+        toast.error("User creation failed.");
+        setLoading(false);
+        return;
+      }
+
+      // UPSERT instead of insert to avoid duplicate key errors
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          email: email,
+          full_name: name,
+          role: role,
+          status: role === "doctor" ? "pending" : "active",
+        });
+
+      if (profileError) throw profileError;
+
+      if (role === "doctor") {
+        toast.success(
+          "Doctor registration submitted. Admin approval required."
+        );
+        navigate("/login");
       } else {
+        toast.success("Account created successfully!");
         navigate("/patient-dashboard");
       }
-    } else {
-      toast.error("Signup successful, but no active session found.");
+
+    } catch (err) {
+      toast.error(err.message);
     }
 
     setLoading(false);
@@ -223,7 +239,7 @@ const Register = () => {
 
       {/* FOOTER */}
       <div className="text-center text-xs text-gray-500 pb-6">
-        © 2025 HealthSync Health Systems. All rights reserved.
+        © 2026 HealthSync Health Systems. All rights reserved.
       </div>
     </div>
   );

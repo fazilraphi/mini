@@ -1,8 +1,11 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Search, Calendar, Video, Heart, Brain, Baby, Stethoscope } from "lucide-react";
 
+
 export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-[#F4FAFC] text-[#0F172A]">
       {/* NAVBAR */}
@@ -15,7 +18,7 @@ export default function Home() {
           <NavLink to="#">Find Doctors</NavLink>
           <NavLink to="#">Specialties</NavLink>
           <NavLink to="#">How it Works</NavLink>
-          <NavLink to="#">About</NavLink>
+          <NavLink to="/about">About</NavLink>
         </nav>
         <div className="flex items-center gap-4">
           <NavLink to="/login" className="text-sm">Login</NavLink>
@@ -44,7 +47,9 @@ export default function Home() {
               placeholder="Specialty, doctor, or condition"
               className="flex-1 outline-none text-sm"
             />
-            <button className="px-4 py-2 bg-sky-500 text-white rounded-lg text-sm">
+            <button
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 bg-sky-500 text-white rounded-lg text-sm">
               Find a Doctor
             </button>
           </div>
@@ -99,8 +104,8 @@ export default function Home() {
           <h3 className="text-3xl font-bold">Ready to speak with a professional?</h3>
           <p className="text-sm opacity-80 mt-3">Join thousands of patients who have already switched to better healthcare.</p>
           <div className="flex justify-center gap-4 mt-8">
-            <button className="px-6 py-3 bg-sky-500 rounded-xl">Book First Visit</button>
-            <button className="px-6 py-3 border border-white/30 rounded-xl">Download App</button>
+            <button onClick={() => navigate('/register')} className="px-6 py-3 bg-sky-500 rounded-xl">Book First Visit</button>
+
           </div>
         </div>
       </section>
@@ -130,8 +135,8 @@ export default function Home() {
           </div>
           <div>
             <h4 className="font-semibold mb-3">Contact</h4>
-            <p className="text-gray-500">help@healthsync.com</p>
-            <p className="text-gray-500">+1 (800) MED-GLSS</p>
+            <p className="text-gray-500">healthsync7721@gmail.com</p>
+
           </div>
         </div>
       </footer>

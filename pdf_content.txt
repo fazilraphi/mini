@@ -1,0 +1,217 @@
+Supabase Database Architecture Documentation
+This document describes the database schema, relationships, and Row Level Security (RLS)
+configuration for the healthcare appointment system implemented using Supabase. The database
+supports roles for patients, doctors, and administrators while enforcing strict access control through
+RLS policies.
+Database Entity Relationship Diagram
+Table: profiles
+Column
+Type
+Description
+id
+uuid
+Primary key linked to auth.users
+email
+text
+User email
+role
+text
+patient / doctor / admin
+created_at
+timestamptz
+Profile creation timestamp
+full_name
+text
+User full name
+institution
+text
+Hospital or organization
+avatar_url
+text
+Profile avatar
+age
+integer
+User age
+gender
+text
+Gender
+phone
+text
+Phone number
+address
+text
+Address
+
+blood_group
+text
+Blood group
+emergency_contact
+text
+Emergency contact
+medical_history
+text
+Medical notes
+speciality
+text
+Doctor speciality
+profile_completed
+boolean
+Profile completion flag
+last_seen
+timestamp
+Last login
+status
+text
+Account status
+Table: appointments
+Column
+Type
+Description
+id
+uuid
+Primary key
+doctor_id
+uuid
+FK -> profiles.id
+date
+date
+Appointment date
+time
+time
+Appointment time
+max_patients
+integer
+Maximum bookings allowed
+created_at
+timestamptz
+Creation timestamp
+Table: appointment_bookings
+Column
+Type
+Description
+id
+uuid
+Primary key
+appointment_id
+uuid
+FK -> appointments.id
+patient_id
+uuid
+FK -> profiles.id
+doctor_id
+uuid
+FK -> auth.users.id
+booked_at
+timestamptz
+Booking time
+status
+text
+booked/completed/cancelled
+Table: chat_messages
+Column
+Type
+Description
+id
+uuid
+Primary key
+booking_id
+uuid
+FK -> appointment_bookings.id
+sender_id
+uuid
+FK -> auth.users.id
+content
+text
+Message text
+file_url
+text
+Attachment url
+file_name
+text
+Attachment name
+
+file_type
+text
+Attachment type
+audio_url
+text
+Audio message
+created_at
+timestamptz
+Timestamp
+seen
+boolean
+Read status
+typing
+boolean
+Typing indicator
+edited
+boolean
+Edit flag
+deleted
+boolean
+Deletion flag
+Table: medical_records
+Column
+Type
+Description
+id
+uuid
+Primary key
+patient_id
+uuid
+FK -> auth.users.id
+doctor_id
+uuid
+FK -> auth.users.id
+appointment_booking_id
+uuid
+FK -> appointment_bookings.id
+title
+text
+Record title
+description
+text
+Notes
+created_at
+timestamptz
+Timestamp
+Table: prescriptions
+Column
+Type
+Description
+id
+uuid
+Primary key
+record_id
+uuid
+FK -> medical_records.id
+medicine_name
+text
+Medicine name
+dosage
+text
+Dosage
+frequency
+text
+Frequency
+duration
+text
+Duration
+created_at
+timestamptz
+Timestamp
+
+Row Level Security (RLS) Overview
+The system uses Supabase Row Level Security to enforce role■based access control. Patient
+Permissions: - Create appointment bookings for themselves - View their bookings, medical records,
+and prescriptions - Participate in chat messages within their appointment booking Doctor
+Permissions: - Manage their own appointments - View bookings related to their appointments -
+Insert medical records and prescriptions for their patients - Participate in appointment chats Admin
+Permissions: - View all user profiles - Update profiles when necessary Authenticated User
+Permissions: - Read available appointments and booking availability
+Database Constraints and Automation
+Key database protections include: - Unique booking constraint preventing duplicate patient
+bookings for the same appointment - Overbooking prevention trigger executed before inserting
+bookings - Foreign key constraints enforcing relational integrity
+

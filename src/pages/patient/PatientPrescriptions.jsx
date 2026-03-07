@@ -6,62 +6,125 @@ const PatientPrescriptions = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const downloadPDF = (record) => {
-
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-    doc.setFontSize(18);
-    doc.text("Medical Prescription", 20, 20);
+    // 1. HEADER (HealthSync Branding)
+    // Dark slate background for header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 40, "F");
 
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.text("HealthSync", 20, 26);
+
+    // Subtitle right aligned
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Official E-Prescription", pageWidth - 20, 26, { align: "right" });
+
+    // Reset text color to black for body
+    doc.setTextColor(0, 0, 0);
+
+    // 2. DOCTOR & RECORD DETAILS
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Dr. ${record.doctor?.full_name || "Unknown"}`, 20, 55);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text("General Physician", 20, 62);
+    doc.text("HealthSync Digital Clinic Partner", 20, 69);
+    doc.setTextColor(0, 0, 0);
+
+    // Record details on the right
+    const dateStr = new Date(record.created_at).toLocaleDateString();
+    const timeStr = new Date(record.created_at).toLocaleTimeString();
+    doc.setFontSize(10);
+    doc.text(`Date: ${dateStr}`, pageWidth - 20, 55, { align: "right" });
+    doc.text(`Time: ${timeStr}`, pageWidth - 20, 62, { align: "right" });
+    doc.text(`Ref ID: #${record.id.slice(0, 8).toUpperCase()}`, pageWidth - 20, 69, { align: "right" });
+
+    // Divider Line
+    doc.setDrawColor(220, 220, 220);
+    doc.line(20, 75, pageWidth - 20, 75);
+
+    // 3. CONSULTATION & CLINICAL NOTES
     doc.setFontSize(12);
-    doc.text(`Consultation: ${record.title}`, 20, 35);
+    doc.setFont("helvetica", "bold");
+    doc.text("Reason For Consultation:", 20, 90);
+    doc.setFont("helvetica", "normal");
+    doc.text(record.title || "N/A", 75, 90);
 
-    doc.text(
-      `Doctor: Dr. ${record.doctor?.full_name || "Unknown"}`,
-      20,
-      45
-    );
+    doc.setFont("helvetica", "bold");
+    doc.text("Clinical Notes & Diagnosis:", 20, 105);
+    doc.setFont("helvetica", "normal");
+    const notesArr = doc.splitTextToSize(record.description || "No specific clinical notes provided.", pageWidth - 40);
+    doc.text(notesArr, 20, 115);
 
-    doc.text(
-      `Date: ${new Date(record.created_at).toLocaleString()}`,
-      20,
-      55
-    );
+    let startY = 115 + (notesArr.length * 6) + 10;
 
-    doc.text("Clinical Notes:", 20, 70);
+    // 4. MEDICINES (Rx Section)
+    // Rx Logo simulation
+    doc.setFontSize(26);
+    doc.setFont("times", "italic");
+    doc.text("Rx", 20, startY);
 
-    const notes = doc.splitTextToSize(
-      record.description || "No notes",
-      170
-    );
+    startY += 8;
 
-    doc.text(notes, 20, 80);
+    // Table Header
+    doc.setFillColor(244, 246, 248);
+    doc.rect(20, startY, pageWidth - 40, 10, "F");
 
-    let y = 100;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Medicine Name", 25, startY + 7);
+    doc.text("Dosage", 100, startY + 7);
+    doc.text("Frequency", 140, startY + 7);
+    doc.text("Duration", 170, startY + 7);
 
-    doc.text("Medicines:", 20, y);
-    y += 10;
+    startY += 15;
+    doc.setFont("helvetica", "normal");
 
     record.prescriptions?.forEach((p, i) => {
-      doc.text(`${i + 1}. ${p.medicine_name}`, 20, y);
-      y += 8;
+      doc.text(`${i + 1}.  ${p.medicine_name}`, 25, startY);
+      doc.text(p.dosage || "-", 100, startY);
+      doc.text(p.frequency || "-", 140, startY);
+      doc.text(p.duration || "-", 170, startY);
 
-      doc.text(`Dosage: ${p.dosage}`, 30, y);
-      y += 8;
+      doc.setDrawColor(240, 240, 240);
+      doc.line(20, startY + 3, pageWidth - 20, startY + 3);
 
-      if (p.frequency) {
-        doc.text(`Frequency: ${p.frequency}`, 30, y);
-        y += 8;
-      }
-
-      if (p.duration) {
-        doc.text(`Duration: ${p.duration}`, 30, y);
-        y += 8;
-      }
-
-      y += 5;
+      startY += 10;
     });
 
-    doc.save(`prescription-${record.id}.pdf`);
+    // 5. SIGNATURE & FOOTER
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Digital Signature Area
+    doc.setDrawColor(0, 0, 0);
+    // simulated digital stamp/symbol
+    doc.setFillColor(15, 23, 42);
+    doc.rect(pageWidth - 70, pageHeight - 65, 50, 15, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("E-APPROVED", pageWidth - 45, pageHeight - 56, { align: "center" });
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.text(`Digitally Signed by Dr. ${record.doctor?.full_name || "Unknown"}`, pageWidth - 45, pageHeight - 45, { align: "center" });
+
+    // Official Footer text
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(150, 150, 150);
+    doc.text("This document is an electronically generated and officially authorized prescription by HealthSync.", pageWidth / 2, pageHeight - 20, { align: "center" });
+    doc.text("Valid at all registered pharmacies. Do not dispense if information appears altered or tampered with.", pageWidth / 2, pageHeight - 15, { align: "center" });
+
+    doc.save(`HealthSync_Prescription_${record.id.slice(0, 8)}.pdf`);
   };
 
   useEffect(() => {
