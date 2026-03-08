@@ -13,7 +13,7 @@ import PatientDashboard from "./pages/patient/PatientDashboard";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 
 import Appointments from "./pages/patient/Appointments";
-import MyAppointments from "./pages/patient/Myappointments";
+import MyAppointments from "./pages/doctor/MyAppointments";
 import Prescriptions from "./pages/patient/PatientPrescriptions";
 import PatientProfile from "./pages/patient/PatientProfile";
 
