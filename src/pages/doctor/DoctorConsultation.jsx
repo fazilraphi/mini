@@ -135,11 +135,11 @@ const DoctorConsultation = () => {
   const radius = 28, circ = 2 * Math.PI * radius;
 
   return (
-    <div style={{ maxWidth: 1200, width: "100%" }}>
+    <div className="max-w-[1200px] w-full px-4 md:px-0 mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1A202C", margin: 0 }}>Doctor Dashboard</h1>
-        <p style={{ color: "#718096", fontSize: 14, marginTop: 4 }}>Welcome back, {docProfile?.full_name}. Check your daily queue.</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 leading-tight">Doctor Dashboard</h1>
+        <p className="text-gray-500 text-sm mt-1">Welcome back, {docProfile?.full_name}. Check your daily queue.</p>
       </div>
 
       {/* Date selector + stat cards */}
@@ -153,7 +153,7 @@ const DoctorConsultation = () => {
       </div>
 
       {/* Stat cards row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 28 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
         {/* Capacity Used */}
         <div style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -186,34 +186,34 @@ const DoctorConsultation = () => {
           <p style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: "0 0 4px" }}>
             {stats.inQueue} <span style={{ fontSize: 14, fontWeight: 400 }}>Patients</span>
           </p>
-          <p style={{ fontSize: 12, color: "#718096", margin: 0 }}>Next: {stats.nextPatient}</p>
+          <p className="text-xs text-gray-500 truncate">Next: {stats.nextPatient}</p>
         </div>
 
         {/* Completed */}
-        <div style={{ ...card }}>
+        <div style={{ ...card }} className="sm:col-span-2 lg:col-span-1">
           <p style={{ color: "#718096", fontSize: 13, margin: "0 0 6px" }}>Completed</p>
           <p style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: "0 0 4px" }}>
             {stats.completed} <span style={{ fontSize: 14, fontWeight: 400 }}>Consults</span>
           </p>
-          <p style={{ fontSize: 12, color: "#718096", margin: 0 }}>All time records</p>
+          <p className="text-xs text-gray-500">All time records</p>
         </div>
       </div>
 
       {/* Main grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
         {/* Left: Patient Queue */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="flex flex-col gap-5">
           <div style={{ ...card }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", margin: 0 }}>Patient Queue</h2>
-              <span style={{ fontSize: 12, color: "#718096", fontWeight: 500 }}>TODAY</span>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Patient Queue</h2>
+              <span className="text-xs font-semibold text-gray-400">TODAY</span>
             </div>
 
             {bookings.length === 0 && (
-              <p style={{ color: "#A0AEC0", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No patients for this date</p>
+              <p className="text-gray-400 text-sm text-center py-6">No patients for this date</p>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="flex flex-col gap-2">
               {bookings.map((b, i) => {
                 const isSelected = selected?.id === b.id;
                 const isFirst = i === 0;
@@ -221,28 +221,19 @@ const DoctorConsultation = () => {
                   <div
                     key={b.id}
                     onClick={() => handleSelect(b)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
-                      borderRadius: 12, cursor: "pointer",
-                      background: isSelected ? "#EBF8FF" : isFirst ? "#F0FFF4" : "transparent",
-                      border: isSelected ? "1.5px solid #0BC5EA" : "1.5px solid transparent",
-                      transition: "all .15s",
-                    }}
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${isSelected ? "bg-cyan-50 border-cyan-400 shadow-sm" : isFirst ? "bg-green-50 border-green-100" : "bg-transparent border-transparent hover:bg-gray-50"
+                      }`}
                   >
-                    <div style={{
-                      width: 36, height: 36, borderRadius: "50%",
-                      background: isFirst ? "linear-gradient(135deg,#0BC5EA,#2B6CB0)" : "#CBD5E0",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#fff", fontWeight: 700, fontSize: 14, flexShrink: 0,
-                    }}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm ${isFirst ? "bg-gradient-to-br from-cyan-400 to-blue-600" : "bg-gray-300"
+                      }`}>
                       {b.profiles?.full_name?.charAt(0) || "?"}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 600, fontSize: 13, color: "#1A202C", margin: 0 }}>{b.profiles?.full_name}</p>
-                      <p style={{ fontSize: 12, color: "#718096", margin: 0 }}>{b.profiles?.gender}, {b.profiles?.age} yrs</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-gray-800 truncate">{b.profiles?.full_name}</p>
+                      <p className="text-xs text-gray-500">{b.profiles?.gender}, {b.profiles?.age} yrs</p>
                     </div>
                     {isFirst && (
-                      <span style={{ background: "#0BC5EA", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999 }}>NOW</span>
+                      <span className="bg-cyan-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">NOW</span>
                     )}
                   </div>
                 );
@@ -252,9 +243,9 @@ const DoctorConsultation = () => {
 
           {/* Patient Overview mini card */}
           {selected && (
-            <div style={{ ...card, border: "1.5px solid #BEE3F8" }}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: "#1A202C", marginBottom: 12, marginTop: 0 }}>Patient Overview</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ ...card }} className="border border-blue-100 bg-blue-50/30">
+              <h3 className="text-sm font-bold text-gray-900 mb-4 tracking-tight uppercase">Patient Overview</h3>
+              <div className="space-y-3">
                 {[
                   ["Name", selected.profiles?.full_name],
                   ["Age", selected.profiles?.age],
@@ -262,9 +253,9 @@ const DoctorConsultation = () => {
                   ["Phone", selected.profiles?.phone],
                   ["History", selected.profiles?.medical_history || "None"],
                 ].map(([label, val]) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: "#718096" }}>{label}</span>
-                    <span style={{ fontWeight: 600, color: "#1A202C" }}>{val || "—"}</span>
+                  <div key={label} className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">{label}</span>
+                    <span className="font-bold text-gray-900 text-right ml-4">{val || "—"}</span>
                   </div>
                 ))}
               </div>
@@ -273,123 +264,128 @@ const DoctorConsultation = () => {
         </div>
 
         {/* Right: New Consultation + History */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="flex flex-col gap-6">
           <div style={{ ...card }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", margin: 0 }}>🩺 New Consultation</h2>
-              <span style={{ background: "#EBF8FF", color: "#0BC5EA", fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 999 }}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+              <h2 className="text-lg font-bold text-gray-900">🩺 New Consultation</h2>
+              <span className="bg-cyan-50 text-cyan-600 text-xs font-bold px-3 py-1.5 rounded-full border border-cyan-100 truncate max-w-full">
                 {selected ? `Patient: ${selected.profiles?.full_name}` : "Select a patient"}
               </span>
             </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "#4A5568", display: "block", marginBottom: 6 }}>Consultation Title</label>
-              <input
-                placeholder="e.g. Annual General Health Checkup"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "#4A5568", display: "block", marginBottom: 6 }}>Clinical Notes</label>
-              <textarea
-                placeholder="Enter findings, symptoms, and diagnosis..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={5}
-                style={{ ...inputStyle, resize: "vertical", minHeight: 100 }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "#4A5568" }}>Prescriptions</label>
-                <button onClick={addRow} style={{ background: "none", border: "none", color: "#0BC5EA", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                  + Add Medication
-                </button>
+            <div className="space-y-5">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5 ml-1">Consultation Title</label>
+                <input
+                  placeholder="e.g. Annual General Health Checkup"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  style={inputStyle}
+                  className="focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                />
               </div>
 
-              {/* Header row */}
-              {meds.length > 0 && (
-                <div style={{
-                  display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr 1fr",
-                  gap: 8, marginBottom: 8, padding: "0 4px",
-                }}>
-                  {["MEDICINE", "DOSAGE", "FREQUENCY", "DURATION"].map(h => (
-                    <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#A0AEC0", letterSpacing: ".5px" }}>{h}</span>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5 ml-1">Clinical Notes</label>
+                <textarea
+                  placeholder="Enter findings, symptoms, and diagnosis..."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={5}
+                  style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+                  className="focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Prescriptions</label>
+                  <button onClick={addRow} className="text-cyan-500 text-xs font-bold hover:text-cyan-600 transition-colors">
+                    + Add Medication
+                  </button>
+                </div>
+
+                {/* Medication Rows */}
+                <div className="space-y-3">
+                  {meds.map((m, i) => (
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 relative">
+                      <div className="sm:col-span-2 lg:col-span-1">
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">MEDICINE</label>
+                        <input
+                          placeholder="Medicine name"
+                          value={m.medicine_name}
+                          onChange={e => updateMed(i, "medicine_name", e.target.value)}
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">DOSAGE</label>
+                        <input
+                          placeholder="e.g. 500mg"
+                          value={m.dosage}
+                          onChange={e => updateMed(i, "dosage", e.target.value)}
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">FREQUENCY</label>
+                        <select
+                          value={m.frequency}
+                          onChange={e => updateMed(i, "frequency", e.target.value)}
+                          style={inputStyle}
+                        >
+                          {["Once a day", "Twice a day", "Three times", "As needed"].map(o => <option key={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">DURATION</label>
+                        <input
+                          placeholder="e.g. 7 Days"
+                          value={m.duration}
+                          onChange={e => updateMed(i, "duration", e.target.value)}
+                          style={inputStyle}
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
-              )}
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {meds.map((m, i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr 1fr", gap: 8 }}>
-                    <input
-                      placeholder="Medicine"
-                      value={m.medicine_name}
-                      onChange={e => updateMed(i, "medicine_name", e.target.value)}
-                      style={{ ...inputStyle, fontSize: 13 }}
-                    />
-                    <input
-                      placeholder="500mg"
-                      value={m.dosage}
-                      onChange={e => updateMed(i, "dosage", e.target.value)}
-                      style={{ ...inputStyle, fontSize: 13 }}
-                    />
-                    <select
-                      value={m.frequency}
-                      onChange={e => updateMed(i, "frequency", e.target.value)}
-                      style={{ ...inputStyle, fontSize: 13 }}
-                    >
-                      {["Once a day", "Twice a day", "Three times", "As needed"].map(o => <option key={o}>{o}</option>)}
-                    </select>
-                    <input
-                      placeholder="7 Days"
-                      value={m.duration}
-                      onChange={e => updateMed(i, "duration", e.target.value)}
-                      style={{ ...inputStyle, fontSize: 13 }}
-                    />
-                  </div>
-                ))}
               </div>
-            </div>
 
-            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              <button onClick={() => saveRecord(false)} style={{ ...btnCyan, flex: 1 }}>
-                💾 Save &amp; Finalize
-              </button>
-              <button onClick={() => saveRecord(true)} style={{ ...btnGray, flex: "0 0 auto" }}>
-                Save Draft
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <button onClick={() => saveRecord(false)} style={{ ...btnCyan, flex: 1 }} className="hover:scale-[1.02] transform transition-all active:scale-95 shadow-lg shadow-cyan-500/20">
+                  💾 Save & Finalize
+                </button>
+                <button onClick={() => saveRecord(true)} style={{ ...btnGray, flex: "0 0 auto" }} className="hover:bg-gray-200 transition-colors">
+                  Save Draft
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Consultation History */}
           <div style={{ ...card }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", margin: 0 }}>🕐 Consultation History</h2>
-              <span style={{ fontSize: 13, color: "#0BC5EA", fontWeight: 600, cursor: "pointer" }}>View All</span>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-md font-bold text-gray-900 tracking-tight uppercase">🕐 Consultation History</h2>
+              <button className="text-cyan-500 text-sm font-bold hover:underline">View All</button>
             </div>
 
             {history.length === 0 && (
-              <p style={{ color: "#A0AEC0", fontSize: 13 }}>{selected ? "No previous records" : "Select a patient to view history"}</p>
+              <p className="text-gray-400 text-sm text-center py-4">{selected ? "No previous records" : "Select a patient to view history"}</p>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="space-y-4">
               {history.map(r => (
-                <div key={r.id} style={{ border: "1px solid #E2E8F0", borderRadius: 12, padding: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <p style={{ fontWeight: 600, fontSize: 14, color: "#1A202C", margin: "0 0 4px" }}>{r.title}</p>
-                    <span style={{ fontSize: 11, color: "#718096" }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                <div key={r.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50 hover:bg-white hover:border-cyan-100 hover:shadow-sm transition-all">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="font-bold text-sm text-gray-900">{r.title}</p>
+                    <span className="text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-100">{new Date(r.created_at).toLocaleDateString()}</span>
                   </div>
-                  <p style={{ fontSize: 13, color: "#4A5568", margin: "0 0 8px" }}>{r.description}</p>
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">{r.description}</p>
                   {r.prescriptions?.length > 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    <div className="flex flex-wrap gap-2">
                       {r.prescriptions.map((p, pi) => (
-                        <span key={pi} style={{ background: "#EBF8FF", color: "#0BC5EA", fontSize: 12, padding: "2px 10px", borderRadius: 999 }}>
-                          {p.medicine_name} {p.dosage}
+                        <span key={pi} className="bg-white border border-cyan-100 text-cyan-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                          {p.medicine_name} • {p.dosage}
                         </span>
                       ))}
                     </div>

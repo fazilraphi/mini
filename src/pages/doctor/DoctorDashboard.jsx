@@ -7,6 +7,7 @@ import ChatList from "../../components/ChatList";
 import DoctorComplaints from "./DoctorComplaints";
 import NotificationBell from "../../components/NotificationBell";
 import { supabase } from "../../supabaseClient";
+import { Menu, X, LogOut } from "lucide-react";
 
 /* ── Icon components defined FIRST to avoid temporal dead zone ── */
 const DashboardIcon = ({ active }) => (
@@ -62,6 +63,7 @@ const NAV = [
 const DoctorDashboard = () => {
   const [active, setActive] = useState("dashboard");
   const [doctorProfile, setDoctorProfile] = useState({ full_name: "Doctor", speciality: "" });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -92,51 +94,88 @@ const DoctorDashboard = () => {
   const initial = doctorProfile.full_name?.charAt(0)?.toUpperCase() || "D";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#EDF2F7", fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#F7FAFC", fontFamily: "'Inter', system-ui, sans-serif", position: "relative" }}>
+
+      {/* MOBILE HEADER */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, height: 64,
+        background: "#fff", borderBottom: "1px solid #E2E8F0", zIndex: 40,
+        display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px",
+      }} className="lg:hidden">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#4A5568", padding: 8, borderRadius: 8 }}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          <span style={{ fontWeight: 800, fontSize: 18, color: "#0BC5EA" }}>HealthSync</span>
+        </div>
+        <NotificationBell />
+      </div>
+
+      {/* OVERLAY */}
+      {isMobileMenuOpen && (
+        <div
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 45,
+            backdropFilter: "blur(4px)",
+          }}
+          className="lg:hidden"
+        />
+      )}
 
       {/* SIDEBAR */}
       <aside style={{
-        width: 220, background: "#fff", display: "flex", flexDirection: "column",
-        borderRight: "1px solid #E2E8F0", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 10,
-      }}>
+        width: 260, background: "#fff", display: "flex", flexDirection: "column",
+        borderRight: "1px solid #E2E8F0", position: "fixed", top: 0, bottom: 0, zIndex: 50,
+        transition: "transform 0.3s ease",
+        transform: isMobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
+        left: 0,
+      }} className="lg:translate-x-0">
         {/* Logo */}
-        <div style={{ padding: "24px 20px 16px", borderBottom: "1px solid #EDF2F7" }}>
+        <div style={{ padding: "32px 24px 20px", borderBottom: "1px solid #F7FAFC" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
-                width: 36, height: 36, background: "linear-gradient(135deg,#0BC5EA,#00B5D8)",
-                borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                width: 40, height: 40, background: "linear-gradient(135deg,#0BC5EA,#00B5D8)",
+                borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(11, 197, 234, 0.2)",
               }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                   <path d="M12 4L4 8v8l8 4 8-4V8z" fill="rgba(255,255,255,0.3)" />
-                  <path d="M12 4v16M4 8l8 4M20 8l-8 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="12" cy="12" r="2" fill="#fff" />
+                  <path d="M12 4v16M4 8l8 4M20 8l-8 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="12" cy="12" r="2.5" fill="#fff" />
                 </svg>
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#1A202C", lineHeight: 1 }}>HealthSync</div>
-                <div style={{ fontSize: 10, color: "#0BC5EA", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Clinic Management</div>
+                <div style={{ fontWeight: 800, fontSize: 17, color: "#1A202C", lineHeight: 1.1 }}>HealthSync</div>
+                <div style={{ fontSize: 10, color: "#0BC5EA", fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>Medical Portal</div>
               </div>
             </div>
-            <NotificationBell />
+            <div className="hidden lg:block">
+              <NotificationBell />
+            </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav style={{ flex: 1, padding: "24px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
           {NAV.map(({ key, label, icon: Icon }) => {
             const isActive = active === key;
             return (
               <button
                 key={key}
-                onClick={() => setActive(key)}
+                onClick={() => { setActive(key); setIsMobileMenuOpen(false); }}
                 style={{
-                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                  borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left", width: "100%",
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                  borderRadius: 12, border: "none", cursor: "pointer", textAlign: "left", width: "100%",
                   background: isActive ? "#EBF8FF" : "transparent",
                   color: isActive ? "#0BC5EA" : "#4A5568",
-                  fontWeight: isActive ? 600 : 500, fontSize: 14,
-                  transition: "all .15s",
+                  fontWeight: isActive ? 700 : 500, fontSize: 14,
+                  transition: "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+                  boxShadow: isActive ? "0 4px 12px rgba(11, 197, 234, 0.1)" : "none",
                 }}
               >
                 <Icon active={isActive} />
@@ -147,49 +186,67 @@ const DoctorDashboard = () => {
         </nav>
 
         {/* Doctor info + logout at bottom */}
-        <div style={{ borderTop: "1px solid #EDF2F7", padding: "16px 12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <div style={{ borderTop: "1px solid #F7FAFC", padding: "24px 16px", background: "#FDFDFD" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: "50%",
+              width: 44, height: 44, borderRadius: 14,
               background: "linear-gradient(135deg,#0BC5EA,#2B6CB0)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontWeight: 700, fontSize: 14, flexShrink: 0,
+              color: "#fff", fontWeight: 800, fontSize: 16, flexShrink: 0,
+              boxShadow: "0 4px 10px rgba(43, 108, 176, 0.2)",
             }}>
               {initial}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 13, color: "#1A202C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {doctorProfile.full_name}
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#1A202C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                Dr. {doctorProfile.full_name}
               </div>
-              <div style={{ fontSize: 11, color: "#718096" }}>{doctorProfile.speciality}</div>
+              <div style={{ fontSize: 12, color: "#718096", fontWeight: 500 }}>{doctorProfile.speciality}</div>
             </div>
           </div>
           <button
             onClick={handleLogout}
             style={{
-              display: "flex", alignItems: "center", gap: 8, width: "100%",
-              padding: "9px 12px", borderRadius: 10, border: "1px solid #FED7D7",
-              background: "#FFF5F5", color: "#C53030", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%",
+              padding: "12px", borderRadius: 12, border: "1px solid #FED7D7",
+              background: "#FFF5F5", color: "#C53030", fontSize: 14, fontWeight: 700, cursor: "pointer",
+              transition: "all 0.2s",
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
+            <LogOut size={18} />
             Logout
           </button>
         </div>
       </aside>
 
       {/* MAIN */}
-      <main style={{ flex: 1, marginLeft: 220, padding: "28px 32px", minHeight: "100vh" }}>
-        {active === "dashboard" && <DoctorConsultation />}
-        {active === "profile" && <Profile defaultEditing={false} />}
-        {active === "availability" && <AppointmentCreator />}
-        {active === "appointments" && <DoctorAppointments />}
-        {active === "prescriptions" && <DoctorConsultation />}
-        {active === "chats" && <ChatList />}
-        {active === "complaints" && <DoctorComplaints />}
+      <main style={{
+        flex: 1, padding: "32px", minHeight: "100vh",
+        transition: "margin 0.3s ease",
+      }} className="lg:ml-[260px] pt-24 lg:pt-8 bg-[#F7FAFC]">
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          {active === "dashboard" && <DoctorConsultation />}
+          {active === "profile" && <Profile defaultEditing={false} />}
+          {active === "availability" && <AppointmentCreator />}
+          {active === "appointments" && <DoctorAppointments />}
+          {active === "prescriptions" && <DoctorConsultation />}
+          {active === "chats" && <ChatList />}
+          {active === "complaints" && <DoctorComplaints />}
+        </div>
       </main>
+
+      <style>{`
+        @media (max-width: 1024px) {
+          .lg\\:ml-\\[260px\\] { margin-left: 0 !important; }
+          .lg\\:translate-x-0 { transform: translateX(-100%); }
+          .lg\\:hidden { display: flex !important; }
+        }
+        @media (min-width: 1025px) {
+          .lg\\:ml-\\[260px\\] { margin-left: 260px !important; }
+          .lg\\:translate-x-0 { transform: translateX(0) !important; }
+          .lg\\:hidden { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 };

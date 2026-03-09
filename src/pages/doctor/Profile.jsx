@@ -87,12 +87,12 @@ const Profile = ({ defaultEditing = false }) => {
   const initial = profile.full_name?.charAt(0)?.toUpperCase() || "D";
 
   return (
-    <div style={{ maxWidth: 860 }}>
+    <div className="max-w-[860px] w-full px-4 md:px-0 mx-auto">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1A202C", margin: "0 0 4px" }}>Doctor Profile</h1>
-          <p style={{ color: "#718096", fontSize: 14, margin: 0 }}>Manage your professional information and account security.</p>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Doctor Profile</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage your professional information and account security.</p>
         </div>
       </div>
 
@@ -104,86 +104,68 @@ const Profile = ({ defaultEditing = false }) => {
         </div>
 
         <div style={{ ...card, marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
             {/* Avatar */}
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <div style={{
-                width: 72, height: 72, borderRadius: 16, overflow: "hidden",
-                background: "linear-gradient(135deg,#BEE3F8,#90CDF4)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 28, fontWeight: 700, color: "#2B6CB0",
-                border: "3px solid #EBF8FF",
-              }}>
+            <div className="relative shrink-0">
+              <div className="w-24 h-24 md:w-20 md:h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-300 flex items-center justify-center text-3xl font-bold text-blue-700 border-4 border-blue-50 shadow-sm">
                 {profile.avatar_url
-                  ? <img src={profile.avatar_url} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                   : initial
                 }
               </div>
-              <div style={{
-                position: "absolute", bottom: -6, right: -6, width: 26, height: 26,
-                background: "#0BC5EA", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                border: "2px solid #fff", cursor: "pointer",
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8 3.2 3.2 0 0 1 15.2 12 3.2 3.2 0 0 1 12 15.2M18.2 12.08c.04-.26.08-.53.08-.08 0-.26-.02-.53-.06-.8l1.71-1.33c.15-.12.19-.34.1-.51l-1.62-2.8c-.1-.18-.3-.24-.48-.18l-2.02.8c-.42-.32-.87-.59-1.36-.8L14.24 5c-.03-.2-.2-.34-.4-.34h-3.24c-.2 0-.36.14-.4.34l-.3 2.14c-.5.21-.94.48-1.37.8l-2-.8c-.2-.07-.4 0-.5.18L4.41 10.12c-.09.17-.05.39.1.51l1.72 1.33c-.04.27-.07.55-.07.86 0 .31.03.59.07.86L4.51 15.01c-.15.12-.19.34-.1.51l1.62 2.8c.1.18.3.25.48.18l2.02-.8c.42.32.87.59 1.36.8l.3 2.14c.04.2.2.34.4.34h3.24c.2 0 .37-.14.4-.34l.3-2.14c.5-.21.95-.48 1.37-.8l2 .8c.2.07.4 0 .5-.18l1.62-2.8c.09-.17.05-.39-.1-.51l-1.7-1.33z" /></svg>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center border-2 border-white cursor-pointer shadow-md hover:scale-110 transition-transform">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8 3.2 3.2 0 0 1 15.2 12 3.2 3.2 0 0 1 12 15.2M18.2 12.08c.04-.26.08-.53.08-.08 0-.26-.02-.53-.06-.8l1.71-1.33c.15-.12.19-.34.1-.51l-1.62-2.8c-.1-.18-.3-.24-.48-.18l-2.02.8c-.42-.32-.87-.59-1.36-.8L14.24 5c-.03-.2-.2-.34-.4-.34h-3.24c-.2 0-.36.14-.4.34l-.3 2.14c-.5.21-.94.48-1.37.8l-2-.8c-.2-.07-.4 0-.5.18L4.41 10.12c-.09.17-.05.39.1.51l1.72 1.33c-.04.27-.07.55-.07.86 0 .31.03.59.07.86L4.51 15.01c-.15.12-.19.34-.1.51l1.62 2.8c.1.18.3.25.48.18l2.02-.8c.42.32.87.59 1.36.8l.3 2.14c.04.2.2.34.4.34h3.24c.2 0 .37-.14.4-.34l.3-2.14c.5-.21.95-.48 1.37-.8l2 .8c.2.07.4 0 .5-.18l1.62-2.8c.09-.17.05-.39-.1-.51l-1.7-1.33z" /></svg>
               </div>
             </div>
 
             {/* Info or Edit form */}
             {isEditing ? (
-              <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <div>
-                  <label style={{ fontSize: 12, color: "#718096", display: "block", marginBottom: 4 }}>Full Name *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Full Name *</label>
                   <input value={editForm.full_name} onChange={e => setEditForm(p => ({ ...p, full_name: e.target.value }))} style={inputStyle} placeholder="Dr. Jane Doe" />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: "#718096", display: "block", marginBottom: 4 }}>Speciality *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Speciality *</label>
                   <input value={editForm.speciality} onChange={e => setEditForm(p => ({ ...p, speciality: e.target.value }))} style={inputStyle} placeholder="Cardiologist" />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: "#718096", display: "block", marginBottom: 4 }}>Institution *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Institution *</label>
                   <input value={editForm.institution} onChange={e => setEditForm(p => ({ ...p, institution: e.target.value }))} style={inputStyle} placeholder="St. Hospital" />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: "#718096", display: "block", marginBottom: 4 }}>Avatar URL</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Avatar URL</label>
                   <input value={editForm.avatar_url} onChange={e => setEditForm(p => ({ ...p, avatar_url: e.target.value }))} style={inputStyle} placeholder="https://..." />
                 </div>
-                <div style={{ gridColumn: "1/-1", display: "flex", gap: 10 }}>
-                  <button onClick={updateProfile} disabled={loading} style={{
-                    background: "linear-gradient(90deg,#0BC5EA,#00B5D8)", color: "#fff", border: "none",
-                    borderRadius: 10, padding: "10px 24px", fontWeight: 600, fontSize: 14, cursor: "pointer",
-                  }}>
+                <div className="sm:col-span-2 flex flex-col sm:flex-row gap-3 pt-2">
+                  <button onClick={updateProfile} disabled={loading} className="flex-1 bg-cyan-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-cyan-500/20 hover:bg-cyan-600 transition-all disabled:opacity-50">
                     {loading ? "Saving..." : "✎ Save Profile"}
                   </button>
                   {!defaultEditing && (
-                    <button onClick={() => { setEditForm({ ...profile }); setIsEditing(false); }} style={{
-                      background: "#EDF2F7", color: "#4A5568", border: "none",
-                      borderRadius: 10, padding: "10px 20px", fontWeight: 600, fontSize: 14, cursor: "pointer",
-                    }}>Cancel</button>
+                    <button onClick={() => { setEditForm({ ...profile }); setIsEditing(false); }} className="bg-gray-100 text-gray-600 font-bold py-3 px-6 rounded-xl hover:bg-gray-200 transition-all">
+                      Cancel
+                    </button>
                   )}
                 </div>
               </div>
             ) : (
-              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#1A202C", margin: "0 0 6px" }}>{profile.full_name || "Doctor"}</h3>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div className="flex-1 flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
+                <div className="text-center md:text-left">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{profile.full_name || "Doctor"}</h3>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3">
                     {profile.institution && (
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#4A5568" }}>
+                      <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
                         🏥 {profile.institution}
                       </span>
                     )}
                     {profile.speciality && (
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#0BC5EA" }}>
+                      <span className="bg-cyan-50 text-cyan-600 text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-cyan-100">
                         🩺 {profile.speciality}
                       </span>
                     )}
                   </div>
                 </div>
-                <button onClick={() => { setEditForm({ ...profile }); setIsEditing(true); }} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  background: "linear-gradient(90deg,#0BC5EA,#00B5D8)", color: "#fff", border: "none",
-                  borderRadius: 10, padding: "9px 20px", fontWeight: 600, fontSize: 13, cursor: "pointer",
-                }}>
+                <button onClick={() => { setEditForm({ ...profile }); setIsEditing(true); }} className="bg-cyan-500 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-cyan-500/20 hover:bg-cyan-600 transition-all text-sm shrink-0">
                   ✎ Edit Profile
                 </button>
               </div>
@@ -242,24 +224,24 @@ const Profile = ({ defaultEditing = false }) => {
         )}
 
         {/* Bottom stat cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div style={{ ...card, border: "1.5px solid #E2E8F0" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#A0AEC0", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, marginTop: 0 }}>Profile Completion</p>
-            <p style={{ fontSize: 28, fontWeight: 800, color: "#1A202C", margin: "0 0 8px" }}>{completionPct}%</p>
-            <div style={{ height: 4, background: "#E2E8F0", borderRadius: 999 }}>
-              <div style={{ height: "100%", width: `${completionPct}%`, background: "linear-gradient(90deg,#0BC5EA,#00B5D8)", borderRadius: 999 }} />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Profile Completion</p>
+            <p className="text-3xl font-black text-gray-900 mb-3">{completionPct}%</p>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div style={{ width: `${completionPct}%` }} className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-500" />
             </div>
           </div>
           <div style={{ ...card, border: "1.5px solid #E2E8F0" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#A0AEC0", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, marginTop: 0 }}>Active Status</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#48BB78" }} />
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#1A202C" }}>Online</span>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Active Status</p>
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(72,187,120,0.5)] animate-pulse" />
+              <span className="text-xl font-bold text-gray-900">Online</span>
             </div>
           </div>
-          <div style={{ ...card, background: "linear-gradient(135deg,#0BC5EA,#2B6CB0)", border: "none" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.7)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, marginTop: 0 }}>Last Login</p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0 }}>{lastLogin}</p>
+          <div style={{ ...card }} className="bg-gradient-to-br from-cyan-500 to-blue-700 border-none shadow-lg shadow-cyan-500/20 sm:col-span-2 lg:col-span-1">
+            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-3">Last Login</p>
+            <p className="text-lg font-black text-white">{lastLogin}</p>
           </div>
         </div>
       </div>
