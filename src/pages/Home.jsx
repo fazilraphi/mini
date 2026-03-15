@@ -279,34 +279,65 @@ export default function Home() {
 
           </div>
 
-          {/* FEATURE GRID (for mobile screens) - STATIC */}
-          <div className="mt-10 px-4 block sm:hidden space-y-4">
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className="bg-gradient-to-br from-sky-500 to-teal-400 text-white p-6 rounded-2xl shadow-lg"
-              >
-                <h3 className="font-bold text-xl mb-3">{feature.title}</h3>
-                <p className="text-sm opacity-90 leading-relaxed mb-4">{feature.desc}</p>
-                <button
-                  onClick={() => navigate("/register")}
-                  className="
-                  w-full
-                  px-6 py-2.5
-                  bg-white
-                  text-sky-600
-                  rounded-lg
-                  font-semibold
-                  hover:scale-[1.05]
-                  active:scale-[0.95]
-                  transition-all
-                  text-sm
-                  "
+          {/* FEATURE CARDS (for mobile screens) - PREMIUM DESIGN */}
+          <div className="mt-14 px-4 block sm:hidden pb-8">
+            {/* Features Grid */}
+            <div className="space-y-4">
+              {features.map((feature, i) => (
+                <div
+                  key={i}
+                  className="group relative bg-white rounded-2xl p-6 shadow-md hover:shadow-2xl transition-all duration-300 border border-sky-100 overflow-hidden hover:border-sky-300"
                 >
-                  Explore Feature
-                </button>
-              </div>
-            ))}
+                  {/* Gradient Background Effect on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-transparent to-teal-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Top accent bar */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 to-teal-400" />
+
+                  {/* Content */}
+                  <div className="relative z-10">
+                    {/* Icon */}
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-sky-400 to-teal-400 mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-bold text-base text-gray-900 mb-2 group-hover:text-sky-600 transition-colors duration-300">
+                      {feature.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 leading-relaxed group-hover:text-gray-700 transition-colors">
+                      {feature.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Explore Button */}
+            <button
+              onClick={() => navigate("/register")}
+              className="
+              w-full
+              mt-8
+              px-8 py-4
+              bg-gradient-to-r from-sky-500 to-teal-400
+              text-white
+              rounded-xl
+              font-bold
+              text-base
+              shadow-lg shadow-sky-300/40
+              hover:scale-[1.02]
+              hover:shadow-xl
+              active:scale-[0.98]
+              transition-all duration-200
+              "
+            >
+              Explore All Features
+            </button>
           </div>
 
         </div>
