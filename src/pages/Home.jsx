@@ -279,13 +279,39 @@ export default function Home() {
 
           </div>
 
-          {/* FEATURE GRID (for mobile screens) */}
-          <div className="mt-10 px-6 block sm:hidden">
-            <div className="grid grid-cols-2 gap-4">
+          {/* FEATURE CAROUSEL (for mobile screens) */}
+          <div className="mt-10 px-4 block sm:hidden overflow-hidden">
+            <div
+              className="flex flex-col transition-transform duration-700 ease-in-out"
+              style={{
+                transform: `translateY(-${index * 100}%)`
+              }}
+            >
               {features.map((feature, i) => (
-                <div key={i} className="bg-gradient-to-br from-sky-500 to-teal-400 text-white p-4 rounded-xl shadow-lg">
-                  <h3 className="font-bold text-lg mb-1">{feature.title}</h3>
-                  <p className="text-sm opacity-90">{feature.desc}</p>
+                <div
+                  key={i}
+                  className="min-h-screen flex flex-col items-center justify-center px-4"
+                >
+                  <div className="bg-gradient-to-br from-sky-500 to-teal-400 text-white p-8 rounded-2xl shadow-xl max-w-sm w-full">
+                    <h3 className="font-bold text-2xl mb-4">{feature.title}</h3>
+                    <p className="text-base opacity-90 leading-relaxed mb-6">{feature.desc}</p>
+                    <button
+                      onClick={() => navigate("/register")}
+                      className="
+                      w-full
+                      px-6 py-3
+                      bg-white
+                      text-sky-600
+                      rounded-lg
+                      font-semibold
+                      hover:scale-[1.05]
+                      active:scale-[0.95]
+                      transition-all
+                      "
+                    >
+                      Explore Feature
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
