@@ -52,7 +52,8 @@ const Appointments = () => {
         profiles:doctor_id(
           full_name,
           institution,
-          speciality
+          speciality,
+          avatar_url
         )
       `)
       .gte("date", todayStr)
@@ -325,8 +326,18 @@ const Appointments = () => {
 
                   <div className="flex justify-between items-center">
 
-                    <div className="w-14 h-14 bg-teal-500 rounded-xl flex items-center justify-center text-white text-xl">
-                      👨‍⚕️
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 bg-teal-50">
+                      {slot.profiles?.avatar_url ? (
+                        <img 
+                          src={slot.profiles.avatar_url} 
+                          alt="Doctor" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-teal-500 text-white flex items-center justify-center font-bold text-xl">
+                          {slot.profiles?.full_name?.charAt(0) || "D"}
+                        </div>
+                      )}
                     </div>
 
                     <span

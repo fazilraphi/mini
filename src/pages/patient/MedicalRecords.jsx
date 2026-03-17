@@ -26,7 +26,7 @@ const MedicalRecords = () => {
       .from("medical_records")
       .select(`
         *,
-        doctor:doctor_id(full_name, speciality),
+        doctor:doctor_id(full_name, speciality, avatar_url),
         prescriptions(*)
       `)
       .eq("patient_id", user.id)
@@ -224,8 +224,18 @@ const MedicalRecords = () => {
                         <p className="text-sm font-bold text-gray-800">Dr. {record.doctor?.full_name}</p>
                         <p className="text-xs text-cyan-600 font-medium">{record.doctor?.speciality}</p>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 font-bold">
-                        {record.doctor?.full_name?.charAt(0)}
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border border-gray-50 bg-cyan-50">
+                        {record.doctor?.avatar_url ? (
+                          <img 
+                            src={record.doctor.avatar_url} 
+                            alt="Doctor" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-cyan-600 font-bold">
+                            {record.doctor?.full_name?.charAt(0) || "D"}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

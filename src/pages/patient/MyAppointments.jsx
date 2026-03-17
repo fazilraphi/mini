@@ -376,10 +376,9 @@ const MyAppointments = ({ statusFilter = "all" }) => {
                                                 {doctor?.avatar_url ? (
                                                     <img src={doctor.avatar_url} alt="Dr. Avatar" className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
+                                                    <div className="w-full h-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">
+                                                        {doctor?.full_name?.charAt(0) || "D"}
+                                                    </div>
                                                 )}
                                             </div>
                                             <div className="min-w-0">

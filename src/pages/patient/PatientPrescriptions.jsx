@@ -5,7 +5,7 @@ import jsPDF from "jspdf";
 const PatientPrescriptions = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const downloadPDF = (record) => {
+  const downloadPDF = async (record) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -30,15 +30,33 @@ const PatientPrescriptions = () => {
     doc.setTextColor(30, 30, 30);
 
     // 2. DOCTOR & RECORD DETAILS
+    // Add Doctor Image if available
+    if (record.doctor?.avatar_url) {
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = record.doctor.avatar_url;
+        });
+        doc.addImage(img, "JPEG", 20, 50, 20, 20);
+      } catch (e) {
+        console.error("Could not add doctor image to PDF", e);
+      }
+    }
+
+    const doctorTextX = record.doctor?.avatar_url ? 45 : 20;
+
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text(`Dr. ${record.doctor?.full_name || "Unknown"}`, 20, 60);
+    doc.text(`Dr. ${record.doctor?.full_name || "Unknown"}`, doctorTextX, 60);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(record.doctor?.speciality || "General Physician", 20, 67);
-    doc.text("HealthSync Digital Clinic Partner", 20, 74);
+    doc.text(record.doctor?.speciality || "General Physician", doctorTextX, 67);
+    doc.text("HealthSync Digital Clinic Partner", doctorTextX, 74);
 
     // Record details on the right
     const dateObj = new Date(record.created_at);
@@ -153,7 +171,9 @@ const PatientPrescriptions = () => {
         description,
         created_at,
         doctor:profiles!medical_records_doctor_profiles_fkey (
-          full_name
+          full_name,
+          speciality,
+          avatar_url
         ),
         prescriptions (
           id,
@@ -242,8 +262,18 @@ const PatientPrescriptions = () => {
 
                 {/* DOCTOR */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-teal-500 text-white rounded-full flex items-center justify-center">
-                    👨‍⚕️
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border border-gray-100 bg-teal-50">
+                    {record.doctor?.avatar_url ? (
+                      <img 
+                        src={record.doctor.avatar_url} 
+                        alt="Doctor" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-teal-500 text-white flex items-center justify-center font-bold">
+                        {record.doctor?.full_name?.charAt(0) || "D"}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -251,7 +281,7 @@ const PatientPrescriptions = () => {
                       Dr. {record.doctor?.full_name || "Unknown"}
                     </p>
                     <p className="text-sm text-gray-500">
-                      General Physician
+                      {record.doctor?.speciality || "General Physician"}
                     </p>
                   </div>
                 </div>
@@ -324,13 +354,9 @@ const PatientPrescriptions = () => {
 
                   <button
                     onClick={() => downloadPDF(record)}
-                    className="border border-blue-500 text-blue-500 px-4 py-2 rounded-lg text-sm hover:bg-blue-50"
+                    className="w-full border border-blue-500 text-blue-500 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors"
                   >
-                    Download PDF
-                  </button>
-
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                    Order Refill
+                    Download Prescription PDF
                   </button>
 
                 </div>
