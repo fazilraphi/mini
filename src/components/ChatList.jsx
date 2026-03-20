@@ -95,13 +95,22 @@ time
                         : booking.patient_id;
                 }
 
+                // Fetch other party profile
                 const { data: otherProfile } = await supabase
                     .from("profiles")
                     .select("full_name, role, avatar_url")
                     .eq("id", otherPartyId)
                     .single();
 
-                /* UNREAD COUNT */
+                // Skip self-chats or broken chats where the other party is also ourselves
+                if (otherPartyId === userId) return null;
+
+                const bInfo = {
+                    ...booking,
+                    otherPartyName: otherProfile?.full_name || "Unknown Patient",
+                    otherPartyAvatar: otherProfile?.avatar_url,
+                    otherPartyId: otherPartyId
+                };
 
                 const { count } = await supabase
                     .from("chat_messages")
@@ -159,7 +168,7 @@ time
 
         );
 
-        setBookings(enriched);
+        setBookings(enriched.filter(Boolean));
         setLoading(false);
 
     };

@@ -1,8 +1,9 @@
 
 
-
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { supabase } from "./supabaseClient";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -13,19 +14,36 @@ import CompleteProfile from "./pages/CompleteProfile";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 
-import Appointments from "./pages/patient/Appointments";
-import MyAppointments from "./pages/patient/MyAppointments";
-import Prescriptions from "./pages/patient/PatientPrescriptions";
-import PatientProfile from "./pages/patient/PatientProfile";
-
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-
-import ChatList from "./components/ChatList";
 
 import "./App.css";
 
 function App() {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes (e.g., login in another tab)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth event:", event);
+      setSession(session);
+      
+      // If the user signed in or out elsewhere, we might want to refresh to prevent identity drift
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        // We only reload if the user ID has actually changed to avoid infinite loops
+        // But for simplicity and safety, a full reload is often best to clear all state
+        // window.location.reload(); 
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <BrowserRouter>
 
@@ -60,18 +78,18 @@ function App() {
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
-        <Route path="/patient-dashboard" element={<PatientDashboard />} />
+        {/* Dashboards (Role-protected via internal logic) */}
+        <Route 
+          path="/patient-dashboard" 
+          element={<PatientDashboard key={session?.user?.id || "none"} />} 
+        />
+        <Route 
+          path="/doctor-dashboard" 
+          element={<DoctorDashboard key={session?.user?.id || "none"} />} 
+        />
 
-        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-        <Route path="appointments" element={<Appointments />} />
-        <Route path="my-appointments" element={<MyAppointments />} />
-        <Route path="prescriptions" element={<Prescriptions />} />
-        <Route path="profile" element={<PatientProfile />} />
-        <Route path="chat" element={<ChatList />} />
-
-
-
-
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
 
@@ -79,4 +97,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;

@@ -43,6 +43,12 @@ const PatientDashboard = () => {
         .eq("id", user.id)
         .single();
 
+      if (!data || data.role !== "patient") {
+        await supabase.auth.signOut();
+        navigate("/login");
+        return;
+      }
+
       setProfile(data);
 
       const required = ["full_name", "age", "gender", "phone", "address", "blood_group", "emergency_contact"];

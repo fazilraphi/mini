@@ -3,7 +3,7 @@ import { supabase } from "../../supabaseClient";
 import { Search, Bell, ChevronRight, Users, Calendar, CheckCircle, Play, PieChart as PieIcon } from "lucide-react";
 import NotificationBell from "../../components/NotificationBell";
 
-const DoctorDashboardHome = ({ onNavigate }) => {
+const DoctorDashboardHome = ({ onNavigate, profile: initialProfile }) => {
     const [stats, setStats] = useState({ totalPatients: 0, appointmentsToday: 0, completed: 0 });
     const [doctorProfile, setDoctorProfile] = useState({ full_name: "Doctor", speciality: "" });
     const [nextPatient, setNextPatient] = useState(null);
@@ -14,13 +14,17 @@ const DoctorDashboardHome = ({ onNavigate }) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // Fetch profile
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("full_name, speciality")
-                .eq("id", user.id)
-                .single();
-            if (profile) setDoctorProfile(profile);
+            // Fetch profile if not provided by prop
+            if (initialProfile) {
+                setDoctorProfile(initialProfile);
+            } else {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("full_name, speciality")
+                    .eq("id", user.id)
+                    .single();
+                if (profile) setDoctorProfile(profile);
+            }
 
             // Fetch stats and queue
             const { data: bookings } = await supabase
@@ -62,7 +66,7 @@ const DoctorDashboardHome = ({ onNavigate }) => {
             {/* Header */}
             <header className="flex flex-wrap items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold">Hi {doctorProfile.full_name?.split(' ')[0] || "Doctor"} 👋,</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Hi {(initialProfile?.full_name || doctorProfile.full_name)?.split(' ')[0] || "Doctor"} 👋,</h1>
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">

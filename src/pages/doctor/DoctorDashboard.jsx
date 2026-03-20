@@ -37,7 +37,11 @@ const DoctorDashboard = () => {
         .eq("id", user.id)
         .single();
 
-      if (!profile) return;
+      if (!profile || profile.role !== "doctor") {
+        await supabase.auth.signOut();
+        window.location.href = "/login";
+        return;
+      }
       setDoctorProfile(profile);
 
       const required = ["full_name", "institution", "speciality"];
@@ -149,7 +153,7 @@ const DoctorDashboard = () => {
       <main className="flex-1 h-full flex flex-col overflow-hidden">
         <div className="flex-1 h-full overflow-y-auto no-scrollbar p-6 lg:p-10 pt-20 lg:pt-10">
           <div className="max-w-[1400px] mx-auto w-full h-full">
-            {active === "dashboard" && <DoctorDashboardHome onNavigate={setActive} />}
+            {active === "dashboard" && <DoctorDashboardHome onNavigate={setActive} profile={doctorProfile} />}
             {active === "profile" && (
               <Profile 
                 defaultEditing={false} 
