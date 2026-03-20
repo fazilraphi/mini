@@ -46,6 +46,9 @@ const AdminComplaints = () => {
         }));
 
         setComplaints(merged);
+        if (merged.length > 0) {
+            toast.success(`Found ${merged.length} complaints`);
+        }
         setLoading(false);
     };
 
@@ -106,31 +109,52 @@ const AdminComplaints = () => {
     };
 
     const filtered = complaints.filter(c => {
+        const s = c.status || "open";
         if (filter === "all") return true;
-        return c.status === filter;
+        return s === filter;
     });
 
     return (
         <div className="space-y-6">
 
-            <div>
-                <h2 className="text-3xl font-bold text-gray-800">Complaints</h2>
-                <p className="text-gray-500 mt-1 text-sm">
-                    Review and manage complaints from users
-                </p>
+            <div className="flex justify-between items-end">
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-800">Complaints</h2>
+                    <p className="text-gray-500 mt-1 text-sm">
+                        Review and manage complaints from users
+                    </p>
+                </div>
+                <button
+                    onClick={fetchComplaints}
+                    className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:text-gray-900 transition-colors border border-gray-100"
+                    title="Refresh Complaints"
+                    disabled={loading}
+                >
+                    REFRESH
+                </button>
             </div>
 
             <div className="flex gap-2">
-                {["all", "open", "resolved"].map(f => (
+                {[
+                    { id: "all", label: "All", count: complaints.length },
+                    { id: "open", label: "Open", count: complaints.filter(c => (c.status || "open") === "open").length },
+                    { id: "resolved", label: "Resolved", count: complaints.filter(c => c.status === "resolved").length }
+                ].map(tab => (
                     <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold capitalize ${filter === f
-                                ? "bg-gray-900 text-white"
-                                : "bg-white border border-gray-200 text-gray-500"
-                            }`}
+                        key={tab.id}
+                        onClick={() => setFilter(tab.id)}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                            filter === tab.id
+                                ? "bg-gray-900 text-white shadow-lg"
+                                : "bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                        }`}
                     >
-                        {f}
+                        {tab.label}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                            filter === tab.id ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
+                        }`}>
+                            {tab.count}
+                        </span>
                     </button>
                 ))}
             </div>

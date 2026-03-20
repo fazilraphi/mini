@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, ShieldCheck, Phone } from "lucide-react";
 import logo from "../assets/healthsync-logo.png";
 
 const Register = () => {
@@ -12,11 +12,26 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("patient");
+  const [doctorLicense, setDoctorLicense] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    if (role === "doctor") {
+      if (doctorLicense.length < 5) {
+        toast.error("Doctor license must be at least 5 characters.");
+        setLoading(false);
+        return;
+      }
+      if (!/^[0-9]{10}$/.test(phone)) {
+        toast.error("Phone number must be exactly 10 digits.");
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
 
@@ -42,16 +57,18 @@ const Register = () => {
           email: email,
           full_name: name,
           role: role,
+          doctor_license: role === "doctor" ? doctorLicense : null,
+          phone: role === "doctor" ? phone : null,
           status: role === "doctor" ? "pending" : "active",
         });
 
       if (profileError) throw profileError;
 
       if (role === "doctor") {
-        toast.success("Doctor registration submitted. Admin approval required.");
+        toast.success(`Doctor registration for ${name} submitted. Admin approval required.`);
         navigate("/login");
       } else {
-        toast.success("Account created successfully!");
+        toast.success(`Patient account for ${name} created successfully!`);
         navigate("/patient-dashboard");
       }
 
@@ -266,6 +283,45 @@ const Register = () => {
 
               </div>
             </div>
+
+            {/* DOCTOR FIELDS */}
+            {role === "doctor" && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-2">
+                    Doctor License Number
+                  </label>
+                  <div className="flex items-center h-[44px] px-4 rounded-lg border border-slate-200 bg-slate-50 focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100 focus-within:bg-white transition-all">
+                    <ShieldCheck size={16} className="text-slate-400 mr-2" />
+                    <input
+                      type="text"
+                      placeholder="License Number"
+                      className="flex-1 bg-transparent outline-none text-sm text-slate-900 placeholder-slate-400"
+                      value={doctorLicense}
+                      onChange={(e) => setDoctorLicense(e.target.value)}
+                      required={role === "doctor"}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="flex items-center h-[44px] px-4 rounded-lg border border-slate-200 bg-slate-50 focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100 focus-within:bg-white transition-all">
+                    <Phone size={16} className="text-slate-400 mr-2" />
+                    <input
+                      type="tel"
+                      placeholder="10-digit Phone Number"
+                      className="flex-1 bg-transparent outline-none text-sm text-slate-900 placeholder-slate-400"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required={role === "doctor"}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* CREATE ACCOUNT BUTTON */}
             <button

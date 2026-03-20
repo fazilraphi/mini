@@ -77,20 +77,20 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex flex-col justify-center items-center px-6">
-            <div className="w-full max-w-md bg-gray-800 rounded-3xl shadow-2xl p-10 border border-gray-700">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 flex flex-col justify-center items-center px-6">
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-10 border border-cyan-100/50">
 
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/50">
-                        <Lock className="text-white" size={24} />
+                    <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-200">
+                        <Lock className="text-white" size={28} />
                     </div>
 
-                    <h1 className="text-2xl font-bold text-white">
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">
                         Admin Portal
                     </h1>
 
-                    <p className="text-gray-400 mt-2 text-sm text-center">
-                        Sign in to access the MediGlass Health Systems administration dashboard.
+                    <p className="text-gray-500 mt-2 text-sm text-center font-medium">
+                        Sign in to access the HealthSync administration dashboard.
                     </p>
                 </div>
 
@@ -98,38 +98,38 @@ const AdminLogin = () => {
 
                     {/* EMAIL */}
                     <div>
-                        <label className="text-sm text-gray-400">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">
                             Email Address
                         </label>
 
-                        <div className="flex items-center bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 mt-2 focus-within:border-cyan-500 transition">
-                            <Mail size={18} className="text-gray-500 mr-3" />
+                        <div className="flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-50 transition-all duration-200">
+                            <Mail size={18} className="text-gray-400 mr-3" />
 
                             <input
                                 type="email"
-                                placeholder="admin@mediglass.com"
+                                placeholder="admin@healthsync.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="flex-1 bg-transparent text-white outline-none placeholder-gray-600"
+                                className="flex-1 bg-transparent text-gray-900 outline-none placeholder-gray-300 font-semibold"
                             />
                         </div>
                     </div>
 
                     {/* PASSWORD */}
                     <div>
-                        <label className="text-sm text-gray-400">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">
                             Password
                         </label>
 
-                        <div className="flex items-center bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 mt-2 focus-within:border-cyan-500 transition">
-                            <Lock size={18} className="text-gray-500 mr-3" />
+                        <div className="flex items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-50 transition-all duration-200">
+                            <Lock size={18} className="text-gray-400 mr-3" />
 
                             <input
                                 type="password"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="flex-1 bg-transparent text-white outline-none placeholder-gray-600"
+                                className="flex-1 bg-transparent text-gray-900 outline-none placeholder-gray-300 font-semibold"
                             />
                         </div>
                     </div>
@@ -138,9 +138,9 @@ const AdminLogin = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-xl font-medium shadow-lg shadow-cyan-500/30 transition disabled:opacity-60"
+                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-cyan-200 transition-all duration-200 active:scale-[0.98] disabled:opacity-60"
                     >
-                        {loading ? "Authenticating..." : "Sign In"}
+                        {loading ? "Authenticating..." : "Sign In →"}
                     </button>
 
                 </form>

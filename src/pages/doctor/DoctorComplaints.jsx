@@ -48,6 +48,7 @@ const DoctorComplaints = () => {
             user_role: "doctor",
             subject: subject.trim(),
             message: message.trim(),
+            status: "open"
         });
 
         if (error) {

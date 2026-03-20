@@ -399,7 +399,7 @@ const PatientProfile = ({ defaultEditing = false }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <InfoCard label="BLOOD GROUP" value={form.blood_group || "-"} icon="🩸" />
-                    <InfoCard label="PHONE" value={form.phone?.slice(-5) || "-"} icon="📱" />
+                    <InfoCard label="PHONE" value={form.phone || "-"} icon="📱" />
                   </div>
                 </div>
 
@@ -803,12 +803,10 @@ const Info = ({ label, value }) => (
 );
 
 const InfoCard = ({ label, value, icon }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-cyan-200 p-4">
-    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</p>
-    <div className="flex items-center gap-2">
-      <span className="text-xl">{icon}</span>
-      <p className="font-bold text-gray-900">{value || "-"}</p>
-    </div>
+  <div className="bg-white rounded-2xl shadow-md border border-cyan-200 p-4 flex flex-col items-center justify-center text-center gap-1 min-h-[90px] w-full overflow-hidden">
+    <span className="text-xl mb-1">{icon}</span>
+    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{label}</p>
+    <p className="font-bold text-gray-900 text-sm break-all w-full leading-tight">{value || "-"}</p>
   </div>
 );
 

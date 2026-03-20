@@ -20,7 +20,7 @@ const AdminDoctorAnalytics = () => {
                 .from("profiles")
                 .select("id, full_name, speciality")
                 .eq("role", "doctor")
-                .eq("status", "active");
+                .in("status", ["active", "approved"]);
 
             if (dError) {
                 toast.error("Error fetching doctors");
@@ -47,7 +47,9 @@ const AdminDoctorAnalytics = () => {
             // 1. Process Specialty Data for Pie Chart
             const specialtyCount = {};
             (doctors || []).forEach(doc => {
-                const spec = doc.speciality || "General";
+                let spec = doc.speciality || "General";
+                // Basic normalization (Capitalize first letter to group better)
+                spec = spec.charAt(0).toUpperCase() + spec.slice(1).toLowerCase();
                 specialtyCount[spec] = (specialtyCount[spec] || 0) + 1;
             });
             const sData = Object.keys(specialtyCount).map(key => ({

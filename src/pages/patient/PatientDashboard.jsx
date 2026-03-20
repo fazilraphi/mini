@@ -7,13 +7,12 @@ import Appointments from "./Appointments";
 import MyAppointments from "./MyAppointments";
 import Prescriptions from "./PatientPrescriptions";
 import PatientProfile from "./PatientProfile";
-import PatientChatbot from "./PatientChatbot";
 import PatientComplaints from "./PatientComplaints";
 import MedicalRecords from "./MedicalRecords";
 import NotificationBell from "../../components/NotificationBell";
 import {
   Menu, X, LogOut, LayoutDashboard, CalendarPlus, CalendarCheck,
-  FileText, MessageSquare, Bot, ShieldAlert, UserCircle, FileHeart
+  FileText, MessageSquare, ShieldAlert, UserCircle, FileHeart
 } from "lucide-react";
 
 const NAV = [
@@ -23,7 +22,6 @@ const NAV = [
   { key: "prescriptions",  label: "Prescriptions",     icon: FileText },
   { key: "chat",           label: "Chat",              icon: MessageSquare },
   { key: "records",        label: "Medical Records",   icon: FileHeart },
-  { key: "chatbot",        label: "Health Assistant",  icon: Bot },
   { key: "complaints",     label: "Complaints",        icon: ShieldAlert },
   { key: "settings",       label: "Settings",          icon: UserCircle },
 ];
@@ -253,12 +251,6 @@ const PatientDashboard = () => {
                           💬 Message Doctor
                         </button>
                         <button
-                          onClick={() => handleNav("chatbot")}
-                          className="w-full border-2 border-gray-100 text-gray-700 font-bold py-3 px-4 rounded-xl hover:bg-gray-50 hover:border-cyan-200 hover:text-[#0BC5EA] transition-all duration-200 text-sm"
-                        >
-                          🤖 Health Assistant
-                        </button>
-                        <button
                           onClick={() => handleNav("records")}
                           className="w-full border-2 border-gray-100 text-gray-700 font-bold py-3 px-4 rounded-xl hover:bg-gray-50 hover:border-cyan-200 hover:text-[#0BC5EA] transition-all duration-200 text-sm"
                         >
@@ -277,7 +269,6 @@ const PatientDashboard = () => {
             {activePage === "prescriptions"  && <Prescriptions />}
             {activePage === "settings"       && <PatientProfile />}
             {activePage === "chat"           && <ChatList />}
-            {activePage === "chatbot"        && <PatientChatbot />}
             {activePage === "complaints"     && <PatientComplaints />}
             {activePage === "records"        && <MedicalRecords />}
 

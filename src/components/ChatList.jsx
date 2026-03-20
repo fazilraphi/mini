@@ -80,7 +80,7 @@ time
             (data || []).map(async booking => {
 
                 const otherPartyId =
-                    role === "patient"
+                    String(userId).toLowerCase().trim() === String(booking.patient_id).toLowerCase().trim()
                         ? booking.doctor_id
                         : booking.patient_id;
 

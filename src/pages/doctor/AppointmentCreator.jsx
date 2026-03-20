@@ -11,6 +11,7 @@ const AppointmentCreator = () => {
   const [maxPatients, setMaxPatients] = useState(5);
   const [loading, setLoading] = useState(false);
   const [slots, setSlots] = useState([]);
+  const [activeTab, setActiveTab] = useState("list"); // 'create' or 'list' for mobile toggle
 
   const loadSlots = async () => {
 
@@ -135,11 +136,11 @@ const AppointmentCreator = () => {
 
       <div className="mb-6 sm:mb-8 flex flex-wrap justify-between items-start sm:items-end gap-3">
 
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+        <div className="flex-1 min-w-[200px]">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
             Availability Management
           </h1>
-          <p className="text-gray-500 font-medium mt-1">
+          <p className="text-sm text-gray-500 font-medium mt-1">
             Configure and manage your clinical consultation hours.
           </p>
         </div>
@@ -153,13 +154,35 @@ const AppointmentCreator = () => {
 
       </div>
 
+      {/* MOBILE TAB SWITCHER */}
+      <div className="flex lg:hidden bg-gray-100/50 p-1.5 rounded-[22px] mb-6 border border-gray-100">
+        <button
+          onClick={() => setActiveTab("list")}
+          className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
+            activeTab === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400"
+          }`}
+        >
+          Upcoming Slots
+        </button>
+        <button
+          onClick={() => setActiveTab("create")}
+          className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
+            activeTab === "create" ? "bg-white text-[#0BC5EA] shadow-sm" : "text-gray-400"
+          }`}
+        >
+          Add New Slot
+        </button>
+      </div>
+
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 overflow-hidden">
 
         {/* CREATE SLOT PANEL */}
 
-        <div className="col-span-12 lg:col-span-5 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-6">
+        <div className={`col-span-12 lg:col-span-5 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-6 ${
+          activeTab === 'create' ? 'flex' : 'hidden lg:flex'
+        }`}>
 
-          <div className="seba-card p-8 flex flex-col gap-8">
+          <div className="seba-card p-5 sm:p-8 flex flex-col gap-6 sm:gap-8">
 
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-cyan-50 flex items-center justify-center text-[#0BC5EA] shadow-inner">
@@ -263,9 +286,11 @@ const AppointmentCreator = () => {
 
         {/* UPCOMING SLOTS */}
 
-        <div className="col-span-12 lg:col-span-7 flex flex-col gap-6 overflow-hidden">
+        <div className={`col-span-12 lg:col-span-7 flex flex-col gap-6 overflow-hidden min-h-[400px] ${
+          activeTab === 'list' ? 'flex' : 'hidden lg:flex'
+        }`}>
 
-          <div className="seba-card flex-1 p-8 flex flex-col overflow-hidden">
+          <div className="seba-card flex-1 p-5 sm:p-8 flex flex-col overflow-hidden">
 
             <div className="flex items-center justify-between mb-8">
 
@@ -294,55 +319,57 @@ const AppointmentCreator = () => {
 
                   <div
                     key={slot.id}
-                    className="group flex items-center gap-6 p-5 bg-white border border-gray-100 rounded-3xl hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-100/20 transition-all"
+                    className="group flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-4 sm:p-5 bg-white border border-gray-100 rounded-3xl hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-100/20 transition-all relative overflow-hidden"
                   >
 
-                    <div className="w-16 h-20 rounded-2xl flex flex-col bg-gray-50 items-center justify-center border">
+                    <div className="flex items-center gap-4 sm:contents">
+                      <div className="w-14 sm:w-16 h-16 sm:h-20 rounded-2xl flex flex-col bg-gray-50 items-center justify-center border shrink-0">
+                        <span className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                          {month}
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black text-gray-900 leading-none">
+                          {day}
+                        </span>
+                      </div>
 
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-                        {month}
-                      </span>
-
-                      <span className="text-2xl font-black text-gray-900 leading-none">
-                        {day}
-                      </span>
-
+                      <div className="sm:hidden">
+                        <p className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                          {formatTime(slot.time)}
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{weekday}</p>
+                      </div>
                     </div>
 
                     <div className="flex-1">
-
-                      <div className="flex items-center gap-2 mb-1">
-
+                      <div className="hidden sm:flex items-center gap-2 mb-1">
                         <span className="text-sm font-black text-gray-900 uppercase tracking-tight">
                           {formatTime(slot.time)}
                         </span>
-
                       </div>
 
-                      <div className="flex flex-wrap gap-4 text-[10px] font-black text-gray-400 uppercase tracking-[1px]">
-
-                        <span className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-black text-gray-400 uppercase tracking-[1px]">
+                        <span className="hidden sm:flex items-center gap-1.5">
                           <Calendar size={12} />
                           {weekday}
                         </span>
 
-                        <span className="flex items-center gap-1.5">
+                        <span className="flex items-center gap-1.5 bg-cyan-50 sm:bg-transparent px-2 sm:px-0 py-1 sm:py-0 rounded-lg text-[#0BC5EA] sm:text-gray-400 border border-cyan-100 sm:border-none">
                           <Users size={12} />
                           {booked}/{slot.max_patients} Patients
                         </span>
-
                       </div>
-
                     </div>
 
-                    <button
-                      onClick={() => deleteSlot(slot.id)}
-                      className="px-5 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-bold uppercase"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-none border-gray-50">
+                      <button
+                        onClick={() => deleteSlot(slot.id)}
+                        className="flex-1 sm:flex-none px-5 py-2.5 sm:py-2 bg-red-50 text-red-500 rounded-xl text-xs font-bold uppercase hover:bg-red-100 transition-colors"
+                      >
+                        Delete
+                      </button>
 
-                    <ChevronRight size={18} className="text-gray-200" />
+                      <ChevronRight size={18} className="text-gray-200 hidden sm:block" />
+                    </div>
 
                   </div>
 

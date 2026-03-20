@@ -39,7 +39,7 @@ const DocRegisterer = () => {
             return;
         }
 
-        toast.success(`Doctor ${status} successfully`);
+        toast.success(`Doctor ${status === 'active' ? 'approved' : status} successfully`);
 
         // refresh pending list
         fetchPendingDoctors();
@@ -63,12 +63,20 @@ const DocRegisterer = () => {
                                 <div>
                                     <h3 className="font-semibold text-gray-800">{doc.full_name}</h3>
                                     <p className="text-sm text-gray-500">{doc.email}</p>
-                                    <p className="text-sm text-gray-500">ID: {doc.id.substring(0, 8)}...</p>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                        <p className="text-xs font-medium text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">
+                                            License: {doc.doctor_license || "N/A"}
+                                        </p>
+                                        <p className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                                            Phone: {doc.phone || "N/A"}
+                                        </p>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">ID: {doc.id.substring(0, 8)}...</p>
                                 </div>
                             </div>
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => handleUpdateStatus(doc.id, "approved")}
+                                    onClick={() => handleUpdateStatus(doc.id, "active")}
                                     className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition"
                                 >
                                     <Check size={18} />

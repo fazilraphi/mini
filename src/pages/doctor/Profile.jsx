@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import {
@@ -14,11 +15,14 @@ import {
 } from "lucide-react";
 
 const DoctorProfile = ({ defaultEditing = false }) => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
     full_name: "",
     institution: "",
     speciality: "",
     avatar_url: "",
+    doctor_license: "",
+    phone: "",
   });
 
   const [editForm, setEditForm] = useState({
@@ -26,6 +30,8 @@ const DoctorProfile = ({ defaultEditing = false }) => {
     institution: "",
     speciality: "",
     avatar_url: "",
+    doctor_license: "",
+    phone: "",
   });
 
   const [email, setEmail] = useState("");
@@ -58,7 +64,7 @@ const DoctorProfile = ({ defaultEditing = false }) => {
 
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, institution, speciality, avatar_url")
+        .select("full_name, institution, speciality, avatar_url, doctor_license, phone")
         .eq("id", user.id)
         .single();
 
@@ -68,6 +74,8 @@ const DoctorProfile = ({ defaultEditing = false }) => {
           institution: data.institution || "",
           speciality: data.speciality || "",
           avatar_url: data.avatar_url || "",
+          doctor_license: data.doctor_license || "",
+          phone: data.phone || "",
         };
 
         setProfile(filled);
@@ -86,6 +94,9 @@ const DoctorProfile = ({ defaultEditing = false }) => {
     if (!editForm.full_name.trim()) return "Full name is required";
     if (!editForm.institution.trim()) return "Institution is required";
     if (!editForm.speciality.trim()) return "Speciality is required";
+    if (!editForm.doctor_license.trim()) return "License number is required";
+    if (!editForm.phone.trim()) return "Phone number is required";
+    if (!/^[0-9]{10}$/.test(editForm.phone.trim())) return "Phone number must be 10 digits";
     return null;
   };
 
@@ -111,6 +122,8 @@ const DoctorProfile = ({ defaultEditing = false }) => {
         institution: editForm.institution.trim(),
         speciality: editForm.speciality.trim(),
         avatar_url: editForm.avatar_url.trim() || null,
+        doctor_license: editForm.doctor_license.trim(),
+        phone: editForm.phone.trim(),
       })
       .eq("id", user.id);
 
@@ -119,6 +132,10 @@ const DoctorProfile = ({ defaultEditing = false }) => {
       toast.success("Profile updated!");
       setProfile({ ...editForm });
       setIsEditing(false);
+
+      if (defaultEditing) {
+        setTimeout(() => navigate("/doctor-dashboard", { replace: true }), 800);
+      }
     }
 
     setLoading(false);
@@ -187,6 +204,8 @@ const DoctorProfile = ({ defaultEditing = false }) => {
     "institution",
     "speciality",
     "avatar_url",
+    "doctor_license",
+    "phone",
   ];
 
   const filledCount = completionFields.filter((f) => profile[f]).length;
@@ -323,36 +342,86 @@ const DoctorProfile = ({ defaultEditing = false }) => {
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <Shield size={16} className="flex-shrink-0" />
                     {isEditing ? (
-                      <input
-                        value={editForm.speciality}
-                        onChange={(e) =>
-                          setEditForm((p) => ({
-                            ...p,
-                            speciality: e.target.value,
-                          }))
-                        }
-                        className="flex-1 bg-white/20 px-3 py-1 rounded-lg text-white placeholder-white/50 text-sm font-semibold border border-white/20"
-                      />
+                      <div className="flex-1 flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-white/70 uppercase">Speciality</label>
+                        <input
+                          value={editForm.speciality}
+                          onChange={(e) =>
+                            setEditForm((p) => ({
+                              ...p,
+                              speciality: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-white/20 px-3 py-1 rounded-lg text-white placeholder-white/50 text-sm font-semibold border border-white/20"
+                        />
+                      </div>
                     ) : (
-                      <span>{profile.speciality || "Speciality not set"}</span>
+                      <span>Speciality: {profile.speciality || "Not set"}</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <Shield size={16} className="flex-shrink-0" />
+                    {isEditing ? (
+                      <div className="flex-1 flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-white/70 uppercase">License Number</label>
+                        <input
+                          placeholder="License Number"
+                          value={editForm.doctor_license}
+                          onChange={(e) =>
+                            setEditForm((p) => ({
+                              ...p,
+                              doctor_license: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-white/20 px-3 py-1 rounded-lg text-white placeholder-white/50 text-sm font-semibold border border-white/20"
+                        />
+                      </div>
+                    ) : (
+                      <span>License: {profile.doctor_license || "Not set"}</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <Zap size={16} className="flex-shrink-0" />
+                    {isEditing ? (
+                      <div className="flex-1 flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-white/70 uppercase">Phone Number</label>
+                        <input
+                          placeholder="Phone Number"
+                          value={editForm.phone}
+                          onChange={(e) =>
+                            setEditForm((p) => ({
+                              ...p,
+                              phone: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-white/20 px-3 py-1 rounded-lg text-white placeholder-white/50 text-sm font-semibold border border-white/20"
+                        />
+                      </div>
+                    ) : (
+                      <span>Phone: {profile.phone || "Not set"}</span>
                     )}
                   </div>
 
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <Award size={16} className="flex-shrink-0" />
                     {isEditing ? (
-                      <input
-                        value={editForm.institution}
-                        onChange={(e) =>
-                          setEditForm((p) => ({
-                            ...p,
-                            institution: e.target.value,
-                          }))
-                        }
-                        className="flex-1 bg-white/20 px-3 py-1 rounded-lg text-white placeholder-white/50 text-sm font-semibold border border-white/20"
-                      />
+                      <div className="flex-1 flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-white/70 uppercase">Institution</label>
+                        <input
+                          value={editForm.institution}
+                          onChange={(e) =>
+                            setEditForm((p) => ({
+                              ...p,
+                              institution: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-white/20 px-3 py-1 rounded-lg text-white placeholder-white/50 text-sm font-semibold border border-white/20"
+                        />
+                      </div>
                     ) : (
-                      <span>{profile.institution || "Institution not set"}</span>
+                      <span>Institution: {profile.institution || "Not set"}</span>
                     )}
                   </div>
                 </div>
@@ -595,36 +664,86 @@ const DoctorProfile = ({ defaultEditing = false }) => {
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Shield size={16} />
                   {isEditing ? (
-                    <input
-                      value={editForm.speciality}
-                      onChange={(e) =>
-                        setEditForm((p) => ({
-                          ...p,
-                          speciality: e.target.value,
-                        }))
-                      }
-                      className="bg-white/20 px-3 py-1 rounded-lg"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-white/70 uppercase">License Number</label>
+                      <input
+                        placeholder="License Number"
+                        value={editForm.doctor_license}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            doctor_license: e.target.value,
+                          }))
+                        }
+                        className="bg-white/20 px-3 py-1 rounded-lg w-40"
+                      />
+                    </div>
                   ) : (
-                    profile.speciality || "Speciality not set"
+                    `License: ${profile.doctor_license || "Not set"}`
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Heart size={16} />
+                  {isEditing ? (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-white/70 uppercase">Phone Number</label>
+                      <input
+                        placeholder="Phone Number"
+                        value={editForm.phone}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            phone: e.target.value,
+                          }))
+                        }
+                        className="bg-white/20 px-3 py-1 rounded-lg w-40"
+                      />
+                    </div>
+                  ) : (
+                    `Phone: ${profile.phone || "Not set"}`
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Shield size={16} />
+                  {isEditing ? (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-white/70 uppercase">Speciality</label>
+                      <input
+                        value={editForm.speciality}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            speciality: e.target.value,
+                          }))
+                        }
+                        className="bg-white/20 px-3 py-1 rounded-lg w-40"
+                      />
+                    </div>
+                  ) : (
+                    `Speciality: ${profile.speciality || "Not set"}`
                   )}
                 </div>
 
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Award size={16} />
                   {isEditing ? (
-                    <input
-                      value={editForm.institution}
-                      onChange={(e) =>
-                        setEditForm((p) => ({
-                          ...p,
-                          institution: e.target.value,
-                        }))
-                      }
-                      className="bg-white/20 px-3 py-1 rounded-lg"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-white/70 uppercase">Institution</label>
+                      <input
+                        value={editForm.institution}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            institution: e.target.value,
+                          }))
+                        }
+                        className="bg-white/20 px-3 py-1 rounded-lg w-40"
+                      />
+                    </div>
                   ) : (
-                    profile.institution || "Institution not set"
+                    `Institution: ${profile.institution || "Not set"}`
                   )}
                 </div>
               </div>

@@ -135,6 +135,10 @@ const ChatWindow = ({ booking, currentUserId, onBack }) => {
             }
 
             setMessages(data || []);
+            console.log(`ChatWindow: Fetched ${data?.length || 0} messages. CurrentUser: [${currentUserId}]`);
+            if (data?.length > 0) {
+                console.log(`First Msg Sender: [${data[0].sender_id}] Align: [${String(data[0].sender_id).toLowerCase().trim() === String(currentUserId).toLowerCase().trim()}]`);
+            }
 
             const unread = data.filter(
                 m => !m.seen && m.sender_id !== currentUserId
@@ -533,7 +537,7 @@ const ChatWindow = ({ booking, currentUserId, onBack }) => {
             {/* CHAT MESSAGES */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
                 {messages.map((msg, index) => {
-                    const isMine = msg.sender_id === currentUserId;
+                    const isMine = String(msg.sender_id).toLowerCase().trim() === String(currentUserId).toLowerCase().trim();
                     return (
                         <div key={msg.id} className="flex flex-col w-full">
                             {index === firstUnreadIndex && unreadCount > 0 && (

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, CheckCircle, BarChart as BarChartIcon, PieChart as PieChartIcon, MessageSquare, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, CheckCircle, BarChart as BarChartIcon, PieChart as PieChartIcon, MessageSquare, Menu, X, ShieldCheck } from "lucide-react";
+import healthsyncLogo from "../../assets/healthsync-logo.png";
 
 import DocRegisterer from "./DocRegisterer";
 import UserDirectory from "./UserDirectory";
@@ -34,7 +35,19 @@ const AdminDashboard = () => {
             }
         };
         checkUser();
+
+        // Fetch open complaints count
+        const getCounts = async () => {
+            const { count } = await supabase
+                .from("complaints")
+                .select("*", { count: 'exact', head: true })
+                .eq("status", "open");
+            setOpenComplaintsCount(count || 0);
+        };
+        getCounts();
     }, [navigate]);
+
+    const [openComplaintsCount, setOpenComplaintsCount] = useState(0);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -50,92 +63,116 @@ const AdminDashboard = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#f4f7fb] flex font-sans relative">
+        <div className="flex h-screen w-screen bg-[#F7FAFC] font-redhat text-[#333] overflow-hidden relative">
 
             {/* MOBILE HEADER */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-gray-900 text-white z-50 px-4 flex items-center justify-between shadow-lg">
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 z-40 flex items-center justify-between px-4">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                        className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
                     >
                         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
-                    <span className="text-lg font-bold tracking-wide">AdminSync</span>
+                    <img src={healthsyncLogo} alt="HealthSync" className="h-7 w-auto object-contain" />
+                    <span className="font-extrabold text-xl text-[#0BC5EA] tracking-tight">HealthSync</span>
                 </div>
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
-                    <LayoutDashboard size={16} className="text-white" />
+                <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
+                    <ShieldCheck size={16} className="text-[#0BC5EA]" />
                 </div>
             </div>
 
             {/* OVERLAY */}
             {isMobileMenuOpen && (
                 <div
-                    className="lg:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity"
                     onClick={() => setIsMobileMenuOpen(false)}
+                    className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-45"
                 />
             )}
 
             {/* SIDEBAR */}
-            <div className={`
-                fixed lg:relative z-50 lg:z-auto
-                w-72 bg-gray-900 text-white flex flex-col pt-8 h-screen
+            <aside className={`
+                fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-50 flex flex-col
                 transition-transform duration-300 ease-in-out
-                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+                lg:translate-x-0 lg:static
             `}>
-                <div className="px-8 mb-12 hidden lg:flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl shadow-lg shadow-cyan-500/30 flex items-center justify-center">
-                        <LayoutDashboard size={20} className="text-white" />
+                {/* Logo */}
+                <div className="p-8 pb-6">
+                    <div className="flex items-center gap-3">
+                        <img src={healthsyncLogo} alt="HealthSync" className="h-10 w-auto object-contain" />
+                        <div>
+                            <div className="font-black text-lg text-gray-900 leading-none">HealthSync</div>
+                            <div className="text-[10px] text-[#0BC5EA] font-extrabold tracking-widest uppercase mt-1">Admin Portal</div>
+                        </div>
                     </div>
-                    <span className="text-xl font-bold tracking-wide">AdminSync</span>
                 </div>
 
-                <div className="lg:hidden px-8 mb-8">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Management</p>
-                </div>
+                {/* Navigation */}
+                <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto no-scrollbar">
+                    {sidebarItems.map((item) => {
+                        const isActive = activeTab === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                                className={`
+                                    w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200
+                                    ${isActive
+                                        ? "bg-cyan-50 text-[#0BC5EA] shadow-sm shadow-cyan-100"
+                                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}
+                                `}
+                            >
+                                <item.icon size={20} className={isActive ? "text-[#0BC5EA]" : "text-gray-400"} />
+                                <span className="flex-1 text-left">{item.label}</span>
+                                {item.id === "complaints" && openComplaintsCount > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                                        {openComplaintsCount}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </nav>
 
-                <div className="px-4 flex-1 space-y-1">
-                    {sidebarItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                            className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl font-medium transition-all ${activeTab === item.id
-                                ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]"
-                                : "text-gray-400 hover:text-white hover:bg-gray-800"
-                                }`}
-                        >
-                            <item.icon size={20} />
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="p-6">
+                {/* Profile & Logout */}
+                <div className="p-4 mt-auto border-t border-gray-50 bg-gray-50/30">
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0BC5EA] to-[#2B6CB0] flex items-center justify-center text-white font-black shadow-md shadow-blue-100 shrink-0">
+                            A
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-sm font-bold text-gray-900 truncate">Administrator</div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase truncate">Main Control</div>
+                        </div>
+                    </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 border border-transparent text-gray-400 py-4 rounded-xl transition-all font-semibold"
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                     >
                         <LogOut size={18} />
-                        Log Out
+                        Logout
                     </button>
                 </div>
-            </div>
+            </aside>
 
             {/* MAIN CONTENT SPACE */}
-            <div className="flex-1 p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 overflow-y-auto w-full">
-                <div className="max-w-6xl mx-auto mb-10">
-                    <div className="mb-8 block lg:hidden">
-                        <h1 className="text-2xl font-bold text-gray-800 capitalize">
-                            {activeTab.replace(/([A-Z])/g, ' $1').trim()}
-                        </h1>
+            <main className="flex-1 h-full flex flex-col overflow-hidden">
+                <div className="flex-1 h-full overflow-y-auto no-scrollbar p-6 lg:p-10 pt-24 lg:pt-10">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="mb-8 block lg:hidden">
+                            <h1 className="text-2xl font-black text-gray-800 capitalize">
+                                {activeTab.replace(/([A-Z])/g, ' $1').trim()}
+                            </h1>
+                        </div>
+                        {activeTab === "directory" && <UserDirectory />}
+                        {activeTab === "registrations" && <DocRegisterer />}
+                        {activeTab === "docAnalytics" && <AdminDoctorAnalytics />}
+                        {activeTab === "patAnalytics" && <AdminPatientAnalytics />}
+                        {activeTab === "complaints" && <AdminComplaints />}
                     </div>
-                    {activeTab === "directory" && <UserDirectory />}
-                    {activeTab === "registrations" && <DocRegisterer />}
-                    {activeTab === "docAnalytics" && <AdminDoctorAnalytics />}
-                    {activeTab === "patAnalytics" && <AdminPatientAnalytics />}
-                    {activeTab === "complaints" && <AdminComplaints />}
                 </div>
-            </div>
+            </main>
         </div>
     );
 };
