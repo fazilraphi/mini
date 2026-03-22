@@ -3,6 +3,8 @@ import { supabase } from "../supabaseClient";
 import ChatWindow from "./ChatWindow";
 import { MessageCircle, Clock } from "lucide-react";
 
+const GLOBAL_PRESENCE_CHANNEL = "global-online-presence";
+
 const ChatList = () => {
 
     const [bookings, setBookings] = useState([]);
@@ -10,6 +12,7 @@ const ChatList = () => {
     const [currentUserId, setCurrentUserId] = useState(null);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [hideExpired, setHideExpired] = useState(true);
+    const [onlineUsers, setOnlineUsers] = useState(new Set());
 
     useEffect(() => {
         initialize();
@@ -25,6 +28,11 @@ const ChatList = () => {
         await fetchChats(user.id);
 
         setupRealtime(user.id);
+
+        // Setup global presence tracking
+        const presenceCleanup = setupPresence(user.id);
+
+        return presenceCleanup;
 
     };
 
@@ -213,6 +221,112 @@ time
     };
 
 
+    /* GLOBAL PRESENCE - ONLINE/OFFLINE STATUS */
+
+    const setupPresence = (userId) => {
+        let presenceCleanup;
+
+        try {
+            const channel = supabase.channel(GLOBAL_PRESENCE_CHANNEL, {
+                config: {
+                    presence: {
+                        key: userId,
+                    },
+                },
+            });
+
+            channel
+                .on("presence", { event: "sync" }, () => {
+                    const state = channel.presenceState();
+                    setOnlineUsers(new Set(Object.keys(state)));
+                })
+                .on("presence", { event: "join" }, ({ key }) => {
+                    setOnlineUsers(prev => new Set([...prev, key]));
+                })
+                .on("presence", { event: "leave" }, ({ key }) => {
+                    setOnlineUsers(prev => {
+                        const next = new Set(prev);
+                        next.delete(key);
+                        return next;
+                    });
+                })
+                .subscribe(async (status) => {
+                    if (status === "SUBSCRIBED") {
+                        await channel.track({
+                            user_id: userId,
+                            online_at: new Date().toISOString(),
+                        });
+                    }
+                });
+
+            presenceCleanup = () => {
+                channel.untrack();
+                supabase.removeChannel(channel);
+            };
+        } catch (err) {
+            console.warn("Presence channel failed in ChatList, using fallback:", err);
+            presenceCleanup = () => {};
+        }
+
+        // Fallback: poll last_seen so online/offline always works
+        const checkOnlineFallback = async () => {
+            try {
+                // Update my own last_seen
+                await supabase
+                    .from("profiles")
+                    .update({ last_seen: new Date().toISOString() })
+                    .eq("id", userId);
+
+                // Get all unique other party IDs from bookings
+                const otherPartyIds = [...new Set(
+                    bookings
+                        .map(b => b.otherPartyId || (b.patient_id === userId ? b.doctor_id : b.patient_id))
+                        .filter(Boolean)
+                )];
+
+                if (otherPartyIds.length === 0) return;
+
+                const { data: profiles } = await supabase
+                    .from("profiles")
+                    .select("id, last_seen")
+                    .in("id", otherPartyIds);
+
+                if (profiles) {
+                    const onlineSet = new Set();
+                    const now = Date.now();
+                    profiles.forEach(p => {
+                        if (p.last_seen) {
+                            const diff = now - new Date(p.last_seen).getTime();
+                            if (diff < 60000) {
+                                onlineSet.add(p.id);
+                            }
+                        }
+                    });
+                    // Merge with existing — presence takes priority
+                    setOnlineUsers(prev => {
+                        const merged = new Set(prev);
+                        onlineSet.forEach(id => merged.add(id));
+                        // Remove users from fallback that are no longer online
+                        // (but only those not tracked by presence)
+                        return merged.size > 0 ? merged : onlineSet;
+                    });
+                }
+            } catch (e) {
+                // Ignore fallback errors
+            }
+        };
+
+        checkOnlineFallback();
+        const fallbackInterval = setInterval(checkOnlineFallback, 10000);
+
+        return () => {
+            clearInterval(fallbackInterval);
+            presenceCleanup();
+        };
+    };
+
+
+
 
     const getTimeStatus = (booking) => {
         const now = new Date();
@@ -379,6 +493,17 @@ time
 
                                                     {booking.otherPartyRole === "doctor" ? "Dr. " : ""}
                                                     <span className="truncate">{booking.otherPartyName}</span>
+
+                                                    {/* Online Status Indicator */}
+                                                    {onlineUsers.has(booking.otherPartyId || (booking.patient_id === currentUserId ? booking.doctor_id : booking.patient_id)) ? (
+                                                        <span className="flex-shrink-0 flex items-center gap-1" title="Online">
+                                                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex-shrink-0 flex items-center gap-1" title="Offline">
+                                                            <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+                                                        </span>
+                                                    )}
 
                                                     {booking.unreadCount > 0 && booking.hasStarted && (
 

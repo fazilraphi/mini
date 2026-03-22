@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, CheckCircle, BarChart as BarChartIcon, PieChart as PieChartIcon, MessageSquare, Menu, X, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, CheckCircle, BarChart as BarChartIcon, PieChart as PieChartIcon, MessageSquare, Menu, X, ShieldCheck, KeyRound } from "lucide-react";
 import healthsyncLogo from "../../assets/healthsync-logo.png";
 
 import DocRegisterer from "./DocRegisterer";
@@ -9,6 +9,7 @@ import UserDirectory from "./UserDirectory";
 import AdminDoctorAnalytics from "./AdminDoctorAnalytics";
 import AdminPatientAnalytics from "./AdminPatientAnalytics";
 import AdminComplaints from "./AdminComplaints";
+import AdminForgotPasswordRequests from "./AdminForgotPasswordRequests";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -43,11 +44,18 @@ const AdminDashboard = () => {
                 .select("*", { count: 'exact', head: true })
                 .eq("status", "open");
             setOpenComplaintsCount(count || 0);
+
+            const { count: pwCount } = await supabase
+                .from("forgot_password")
+                .select("*", { count: 'exact', head: true })
+                .eq("status", "pending");
+            setPendingPasswordRequests(pwCount || 0);
         };
         getCounts();
     }, [navigate]);
 
     const [openComplaintsCount, setOpenComplaintsCount] = useState(0);
+    const [pendingPasswordRequests, setPendingPasswordRequests] = useState(0);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -60,6 +68,7 @@ const AdminDashboard = () => {
         { id: "docAnalytics", label: "Doctor Analytics", icon: BarChartIcon },
         { id: "patAnalytics", label: "Patient Analytics", icon: PieChartIcon },
         { id: "complaints", label: "Complaints", icon: MessageSquare },
+        { id: "forgotPassword", label: "Password Resets", icon: KeyRound },
     ];
 
     return (
@@ -130,6 +139,11 @@ const AdminDashboard = () => {
                                         {openComplaintsCount}
                                     </span>
                                 )}
+                                {item.id === "forgotPassword" && pendingPasswordRequests > 0 && (
+                                    <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                                        {pendingPasswordRequests}
+                                    </span>
+                                )}
                             </button>
                         );
                     })}
@@ -170,6 +184,7 @@ const AdminDashboard = () => {
                         {activeTab === "docAnalytics" && <AdminDoctorAnalytics />}
                         {activeTab === "patAnalytics" && <AdminPatientAnalytics />}
                         {activeTab === "complaints" && <AdminComplaints />}
+                        {activeTab === "forgotPassword" && <AdminForgotPasswordRequests />}
                     </div>
                 </div>
             </main>

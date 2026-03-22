@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
 import { Send, Paperclip, FileText, Clock, Mic, X, User } from "lucide-react";
@@ -64,144 +64,205 @@ const ChatWindow = ({ booking, currentUserId, onBack }) => {
     }, []);
 
 
-    /* UPDATE MY LAST SEEN */
+    /* SUPABASE PRESENCE + FALLBACK - ONLINE/OFFLINE TRACKING */
 
     useEffect(() => {
+        let presenceChannel;
+        let fallbackInterval;
 
-        const updateLastSeen = async () => {
+        try {
+            // Primary: Supabase Realtime Presence
+            presenceChannel = supabase.channel(`presence-chat-${booking.id}`, {
+                config: {
+                    presence: {
+                        key: currentUserId,
+                    },
+                },
+            });
 
-            await supabase
-                .from("profiles")
-                .update({ last_seen: new Date() })
-                .eq("id", currentUserId);
+            presenceChannel
+                .on("presence", { event: "sync" }, () => {
+                    const state = presenceChannel.presenceState();
+                    setOnline(!!state[otherUserId] && state[otherUserId].length > 0);
+                })
+                .on("presence", { event: "join" }, ({ key }) => {
+                    if (key === otherUserId) setOnline(true);
+                })
+                .on("presence", { event: "leave" }, ({ key }) => {
+                    if (key === otherUserId) setOnline(false);
+                })
+                .subscribe(async (status) => {
+                    if (status === "SUBSCRIBED") {
+                        await presenceChannel.track({
+                            user_id: currentUserId,
+                            online_at: new Date().toISOString(),
+                        });
+                    }
+                });
+        } catch (err) {
+            console.warn("Presence channel failed, using fallback:", err);
+        }
 
+        // Fallback: poll last_seen every 10s (in case Presence doesn't work)
+        const checkOnlineFallback = async () => {
+            try {
+                // Update my own last_seen
+                await supabase
+                    .from("profiles")
+                    .update({ last_seen: new Date().toISOString() })
+                    .eq("id", currentUserId);
+
+                // Check other user's last_seen
+                const { data } = await supabase
+                    .from("profiles")
+                    .select("last_seen")
+                    .eq("id", otherUserId)
+                    .single();
+
+                if (data?.last_seen) {
+                    const diff = Date.now() - new Date(data.last_seen).getTime();
+                    // If they were active in the last 60 seconds, consider online
+                    // Only override if presence says offline (presence takes priority when it says online)
+                    if (diff < 60000) {
+                        setOnline(true);
+                    }
+                }
+            } catch (e) {
+                // Ignore fallback errors
+            }
         };
 
-        updateLastSeen();
+        checkOnlineFallback();
+        fallbackInterval = setInterval(checkOnlineFallback, 10000);
 
-        const interval = setInterval(updateLastSeen, 30000);
-
-        return () => clearInterval(interval);
-
-    }, [currentUserId]);
-
-
-    /* CHECK OTHER USER ONLINE */
-
-    useEffect(() => {
-
-        const checkStatus = async () => {
-
-            const { data } = await supabase
-                .from("profiles")
-                .select("last_seen")
-                .eq("id", otherUserId)
-                .single();
-
-            if (!data?.last_seen) return;
-
-            const diff = new Date() - new Date(data.last_seen);
-
-            setOnline(diff < 60000);
-
+        return () => {
+            clearInterval(fallbackInterval);
+            if (presenceChannel) {
+                presenceChannel.untrack();
+                supabase.removeChannel(presenceChannel);
+            }
         };
-
-        checkStatus();
-
-        const interval = setInterval(checkStatus, 5000);
-
-        return () => clearInterval(interval);
-
-    }, [otherUserId]);
+    }, [currentUserId, otherUserId, booking.id]);
 
 
     /* FETCH MESSAGES */
 
-    useEffect(() => {
+    const fetchMessages = useCallback(async (silent = false) => {
 
-        const fetchMessages = async () => {
+        if (!silent) setLoading(true);
 
-            setLoading(true);
+        const { data, error } = await supabase
+            .from("chat_messages")
+            .select("*")
+            .eq("booking_id", booking.id)
+            .order("created_at", { ascending: true });
 
-            const { data, error } = await supabase
-                .from("chat_messages")
-                .select("*")
-                .eq("booking_id", booking.id)
-                .order("created_at", { ascending: true });
+        if (error) {
+            if (!silent) toast.error("Failed to load messages");
+            return;
+        }
 
-            if (error) {
-                toast.error("Failed to load messages");
-                return;
+        setMessages(prev => {
+            // Smart merge: only update if new messages or changes detected
+            if (JSON.stringify(prev.map(m => m.id)) === JSON.stringify((data || []).map(m => m.id)) && prev.length === (data || []).length) {
+                // Same message IDs — check for content changes (edits, deletes)
+                const hasChanges = prev.some((m, i) => {
+                    const newMsg = data[i];
+                    return newMsg && (m.content !== newMsg.content || m.deleted !== newMsg.deleted || m.edited !== newMsg.edited);
+                });
+                if (!hasChanges) return prev; // No changes, skip re-render
             }
+            return data || [];
+        });
 
-            setMessages(data || []);
+        if (!silent) {
             console.log(`ChatWindow: Fetched ${data?.length || 0} messages. CurrentUser: [${currentUserId}]`);
-            if (data?.length > 0) {
-                console.log(`First Msg Sender: [${data[0].sender_id}] Align: [${String(data[0].sender_id).toLowerCase().trim() === String(currentUserId).toLowerCase().trim()}]`);
-            }
+        }
 
-            const unread = data.filter(
-                m => !m.seen && m.sender_id !== currentUserId
-            ).length;
+        const unread = (data || []).filter(
+            m => !m.seen && m.sender_id !== currentUserId
+        ).length;
 
-            setUnreadCount(unread);
+        setUnreadCount(unread);
 
+        // Mark unread messages as seen
+        if (unread > 0) {
             await supabase
                 .from("chat_messages")
                 .update({ seen: true })
                 .eq("booking_id", booking.id)
                 .neq("sender_id", currentUserId)
                 .eq("seen", false);
+        }
 
-            setLoading(false);
+        if (!silent) setLoading(false);
 
-        };
+    }, [booking.id, currentUserId]);
 
-        fetchMessages();
+    // Initial fetch
+    useEffect(() => {
+        fetchMessages(false);
+    }, [fetchMessages]);
 
-    }, [booking.id]);
 
-
-    /* REALTIME */
+    /* REALTIME MESSAGES + POLLING FALLBACK */
 
     useEffect(() => {
 
-        const channel = supabase.channel(`chat-${booking.id}`)
+        let realtimeWorking = false;
+
+        // Method 1: Supabase Realtime (instant when enabled)
+        const channel = supabase.channel(`chat-realtime-${booking.id}`)
             .on(
                 "postgres_changes",
                 {
-                    event: "INSERT",
+                    event: "*", // Listen for INSERT, UPDATE, DELETE
                     schema: "public",
                     table: "chat_messages",
                     filter: `booking_id=eq.${booking.id}`
                 },
                 payload => {
+                    realtimeWorking = true;
 
-                    const newMessage = payload.new;
+                    if (payload.eventType === "INSERT") {
+                        const newMessage = payload.new;
+                        setMessages(prev => {
+                            if (prev.find(m => m.id === newMessage.id)) return prev;
+                            return [...prev, newMessage];
+                        });
 
-                    setMessages(prev => {
-                        if (prev.find(m => m.id === newMessage.id)) return prev;
-                        return [...prev, newMessage];
-                    });
-
-                    if (newMessage.sender_id !== currentUserId) {
-
-                        setUnreadCount(prev => prev + 1);
-
-                        supabase
-                            .from("chat_messages")
-                            .update({ seen: true })
-                            .eq("id", newMessage.id);
-
+                        if (newMessage.sender_id !== currentUserId) {
+                            setUnreadCount(prev => prev + 1);
+                            // Auto-mark as seen since user is viewing the chat
+                            supabase
+                                .from("chat_messages")
+                                .update({ seen: true })
+                                .eq("id", newMessage.id);
+                        }
+                    } else if (payload.eventType === "UPDATE") {
+                        const updated = payload.new;
+                        setMessages(prev =>
+                            prev.map(m => m.id === updated.id ? updated : m)
+                        );
                     }
-
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log(`Chat realtime channel status: ${status}`);
+            });
 
-        return () => supabase.removeChannel(channel);
+        // Method 2: Polling fallback (catches anything Realtime misses)
+        // Polls every 3 seconds to ensure messages always appear
+        const pollInterval = setInterval(() => {
+            fetchMessages(true); // silent fetch — no loading indicator
+        }, 3000);
 
-    }, []);
+        return () => {
+            clearInterval(pollInterval);
+            supabase.removeChannel(channel);
+        };
+
+    }, [booking.id, currentUserId, fetchMessages]);
 
 
     /* SCROLL */

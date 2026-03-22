@@ -10,6 +10,7 @@ import About from "./pages/About";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CompleteProfile from "./pages/CompleteProfile";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
@@ -73,6 +74,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Admin Pages */}
         <Route path="/admin" element={<AdminLogin />} />
